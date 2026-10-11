@@ -172,7 +172,7 @@ fun SettingsScreen(state: UiState, vm: RemoteViewModel) {
 
 @Composable
 private fun SectionLabel(title: String) {
-    Text(title, style = PuckText.label, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp))
+    Text(title, style = PuckText.label, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp))
 }
 
 @Composable

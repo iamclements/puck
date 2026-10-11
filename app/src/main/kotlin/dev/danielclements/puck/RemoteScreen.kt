@@ -255,7 +255,7 @@ private fun RemoteHeader(
             // is unchanged.
             Box(
                 Modifier
-                    .size(42.dp)
+                    .size(44.dp)
                     .puckHintArc(MaterialTheme.colorScheme.tertiary)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.tertiaryContainer)

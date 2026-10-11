@@ -105,7 +105,7 @@ fun PuckActionTray(
 @Composable
 fun PuckTrayIconButton(
     onClick: () -> Unit,
-    size: Dp = 42.dp,
+    size: Dp = 44.dp,
     contentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     active: Boolean = false,
     content: @Composable () -> Unit,
@@ -123,8 +123,10 @@ fun PuckTrayIconButton(
             ),
         contentAlignment = Alignment.Center,
     ) {
+        // Not a fixed `primary` role (DESIGN_SPEC.md §2) — this toggle has no
+        // mockup reference, so it stays neutral rather than borrowing primary.
         CompositionLocalProvider(
-            LocalContentColor provides if (active) MaterialTheme.colorScheme.primary else contentColor,
+            LocalContentColor provides if (active) MaterialTheme.colorScheme.onSurface else contentColor,
             content = content,
         )
     }
