@@ -39,6 +39,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -142,6 +143,10 @@ fun RemoteScreen(device: AppleTvDevice, state: UiState, vm: RemoteViewModel) {
     // A hold has no on-screen feedback of its own, so the buzz is the only
     // signal that it registered rather than a tap.
     val feedback = rememberFeedback(state.settings.hapticsEnabled, state.settings.buttonSoundEnabled)
+    // Posture drives Book/Tabletop (DESIGN_SPEC.md §8); null on a non-foldable
+    // device, where every mode below falls through to Phone/Landscape/Centered
+    // exactly as it did before foldable support existed.
+    val fold = rememberFoldingFeature()
 
     BoxWithConstraints(
         modifier = Modifier
@@ -153,98 +158,140 @@ fun RemoteScreen(device: AppleTvDevice, state: UiState, vm: RemoteViewModel) {
         // Landscape puts the pad and the controls side by side; portrait stacks
         // them, with the pad taking whatever height is left over.
         val landscape = maxWidth > maxHeight
+        val mode = computeLayoutMode(fold, maxWidth, maxHeight)
 
-        // The drawer is the landscape screen too, so its apps load for it.
-        LaunchedEffect(showApps, landscape) {
-            if ((showApps || landscape) && state.apps.isEmpty()) vm.loadApps()
+        // The drawer is the landscape screen too (as is every multi-pane
+        // mode, which always shows an app grid), so its apps load for them.
+        val appsVisible = showApps || landscape || mode == RemoteLayoutMode.BOOK || mode == RemoteLayoutMode.TABLETOP
+        LaunchedEffect(appsVisible) {
+            if (appsVisible && state.apps.isEmpty()) vm.loadApps()
         }
 
-        Column(Modifier.fillMaxSize()) {
-        // ---- header (DESIGN_SPEC.md §6.1) ----
-        Row(
-            modifier = Modifier.height(52.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        when (mode) {
+            RemoteLayoutMode.BOOK -> BookRemoteContent(device, state, vm, feedback)
+            RemoteLayoutMode.TABLETOP -> TabletopRemoteContent(device, state, vm, feedback, fold)
+            RemoteLayoutMode.CENTERED -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(Modifier.widthIn(max = 520.dp).fillMaxHeight()) {
+                    PhoneRemoteContent(device, state, vm, feedback, showApps, landscape) { showApps = !showApps }
+                }
+            }
+            RemoteLayoutMode.LANDSCAPE, RemoteLayoutMode.PHONE ->
+                PhoneRemoteContent(device, state, vm, feedback, showApps, landscape) { showApps = !showApps }
+        }
+    }
+}
+
+/** The header row, shared by every layout mode (DESIGN_SPEC.md §6.1). */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun RemoteHeader(
+    device: AppleTvDevice,
+    state: UiState,
+    vm: RemoteViewModel,
+    feedback: (HapticFeedbackType) -> Unit,
+    appsActive: Boolean,
+    onToggleApps: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.height(52.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        PuckRoundButton(
+            onClick = { vm.disconnect() },
+            size = 44.dp,
+            containerColor = Puck.colors.raised,
+            contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
-            PuckRoundButton(
-                onClick = { vm.disconnect() },
-                size = 44.dp,
-                containerColor = Puck.colors.raised,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_disconnect),
-                    modifier = Modifier.size(20.dp),
-                )
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = stringResource(R.string.cd_disconnect),
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(device.name, style = PuckText.deviceTitle, color = MaterialTheme.colorScheme.onSurface)
+            Spacer(Modifier.height(4.dp))
+            val subtitle = when {
+                state.reconnecting -> stringResource(R.string.reconnecting)
+                state.capabilities?.volume == true && state.volume != null ->
+                    stringResource(R.string.volume_percent, (state.volume * 100).toInt())
+                else -> stringResource(R.string.connected)
             }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(device.name, style = PuckText.deviceTitle, color = MaterialTheme.colorScheme.onSurface)
-                Spacer(Modifier.height(4.dp))
-                val subtitle = when {
-                    state.reconnecting -> stringResource(R.string.reconnecting)
-                    state.capabilities?.volume == true && state.volume != null ->
-                        stringResource(R.string.volume_percent, (state.volume * 100).toInt())
-                    else -> stringResource(R.string.connected)
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    val dotColor = if (state.reconnecting) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
-                    Box(
-                        Modifier
-                            .size(8.dp)
-                            .then(
-                                if (!state.reconnecting) {
-                                    Modifier.drawBehind {
-                                        drawCircle(dotColor.copy(alpha = 0.2f), radius = size.width * 0.9f)
-                                    }
-                                } else Modifier,
-                            )
-                            .clip(CircleShape)
-                            .background(dotColor),
-                    )
-                    Spacer(Modifier.width(7.dp))
-                    Text(subtitle, style = PuckText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-            Spacer(Modifier.width(8.dp))
-            PuckActionTray {
-                PuckTrayIconButton(onClick = { vm.toggleKeyboard() }, active = state.keyboardOpen) {
-                    Icon(Icons.Default.Keyboard, contentDescription = stringResource(R.string.cd_keyboard), modifier = Modifier.size(20.dp))
-                }
-                PuckTrayIconButton(onClick = { showApps = !showApps }, active = showApps) {
-                    Icon(Icons.Default.Apps, contentDescription = stringResource(R.string.cd_apps), modifier = Modifier.size(20.dp))
-                }
-                // A tap opens Control Centre, which is what the remote's own power
-                // button does — sleeping outright, with no confirmation and no way
-                // back, is not what pressing power on a remote means. Sleep lives
-                // inside that panel; waking does not, since a sleeping TV has no
-                // panel to open, so it stays on the hold. The quiet arc is only a
-                // hint that holding it does something different — tap/hold itself
-                // is unchanged.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                val dotColor = if (state.reconnecting) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
                 Box(
                     Modifier
-                        .size(42.dp)
-                        .puckHintArc(MaterialTheme.colorScheme.tertiary)
+                        .size(8.dp)
+                        .then(
+                            if (!state.reconnecting) {
+                                Modifier.drawBehind {
+                                    drawCircle(dotColor.copy(alpha = 0.2f), radius = size.width * 0.9f)
+                                }
+                            } else Modifier,
+                        )
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.tertiaryContainer)
-                        .combinedClickable(
-                            onClick = { vm.holdHome() },
-                            onLongClick = {
-                                feedback(HapticFeedbackType.LongPress)
-                                vm.wake()
-                            },
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        Icons.Default.PowerSettingsNew,
-                        contentDescription = stringResource(R.string.cd_power),
-                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                        modifier = Modifier.size(19.dp),
-                    )
-                }
+                        .background(dotColor),
+                )
+                Spacer(Modifier.width(7.dp))
+                Text(subtitle, style = PuckText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
+        Spacer(Modifier.width(8.dp))
+        PuckActionTray {
+            PuckTrayIconButton(onClick = { vm.toggleKeyboard() }, active = state.keyboardOpen) {
+                Icon(Icons.Default.Keyboard, contentDescription = stringResource(R.string.cd_keyboard), modifier = Modifier.size(20.dp))
+            }
+            PuckTrayIconButton(onClick = onToggleApps, active = appsActive) {
+                Icon(Icons.Default.Apps, contentDescription = stringResource(R.string.cd_apps), modifier = Modifier.size(20.dp))
+            }
+            // A tap opens Control Centre, which is what the remote's own power
+            // button does — sleeping outright, with no confirmation and no way
+            // back, is not what pressing power on a remote means. Sleep lives
+            // inside that panel; waking does not, since a sleeping TV has no
+            // panel to open, so it stays on the hold. The quiet arc is only a
+            // hint that holding it does something different — tap/hold itself
+            // is unchanged.
+            Box(
+                Modifier
+                    .size(42.dp)
+                    .puckHintArc(MaterialTheme.colorScheme.tertiary)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.tertiaryContainer)
+                    .combinedClickable(
+                        onClick = { vm.holdHome() },
+                        onLongClick = {
+                            feedback(HapticFeedbackType.LongPress)
+                            vm.wake()
+                        },
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Default.PowerSettingsNew,
+                    contentDescription = stringResource(R.string.cd_power),
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.size(19.dp),
+                )
+            }
+        }
+    }
+}
+
+/** Phone portrait, phone landscape, and Centered (Phone, just width-capped). */
+@Composable
+private fun PhoneRemoteContent(
+    device: AppleTvDevice,
+    state: UiState,
+    vm: RemoteViewModel,
+    feedback: (HapticFeedbackType) -> Unit,
+    showApps: Boolean,
+    landscape: Boolean,
+    onToggleApps: () -> Unit,
+) {
+    Column(Modifier.fillMaxSize()) {
+        RemoteHeader(device, state, vm, feedback, appsActive = showApps, onToggleApps = onToggleApps)
 
         state.error?.let { message ->
             Spacer(Modifier.height(8.dp))
@@ -322,6 +369,100 @@ fun RemoteScreen(device: AppleTvDevice, state: UiState, vm: RemoteViewModel) {
         }
 
         Spacer(Modifier.height(12.dp))
+    }
+}
+
+/**
+ * Unfolded / wide: left pane is the phone remote (header, pad, deck), right
+ * pane a Now Playing hero plus a 3-column app grid (DESIGN_SPEC.md §8,
+ * `FoldBook.dc.html`). Not verified on a physical or emulated foldable —
+ * there was none available this session; the layout and its reuse of the
+ * already-gesture-tested TouchPad/Deck should be structurally sound, but
+ * treat it as unverified until it's been run on real hardware.
+ */
+@Composable
+private fun BookRemoteContent(
+    device: AppleTvDevice,
+    state: UiState,
+    vm: RemoteViewModel,
+    feedback: (HapticFeedbackType) -> Unit,
+) {
+    Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(40.dp)) {
+        Column(Modifier.weight(1f)) {
+            RemoteHeader(device, state, vm, feedback, appsActive = true, onToggleApps = {})
+            Spacer(Modifier.height(14.dp))
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                TouchPad(
+                    modifier = Modifier.fillMaxSize(),
+                    hapticsEnabled = state.settings.hapticsEnabled,
+                    soundEnabled = state.settings.buttonSoundEnabled,
+                    sensitivity = state.settings.sensitivity.multiplier,
+                    connected = !state.reconnecting,
+                    onDirectionDown = { feedback(HapticFeedbackType.LongPress); vm.padDirectionDown(it) },
+                    onDirectionUp = { vm.padDirectionUp(it) },
+                    onSelect = { vm.press(Button.SELECT) },
+                    onSelectDown = { vm.selectDown() },
+                    onSelectUp = { vm.selectUp() },
+                    onTouch = { x, y, phase -> vm.touch(x, y, phase) },
+                )
+            }
+            Spacer(Modifier.height(14.dp))
+            Deck(state, vm)
+        }
+
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            NowPlayingHero(device, state, vm, artworkAspect = 16f / 9f)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(stringResource(R.string.apps_label), style = PuckText.label, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 6.dp))
+                AppGrid(state, vm, Modifier.weight(1f), columns = 3)
+            }
+        }
+    }
+}
+
+/**
+ * Half-open flat on a table: header + a Now Playing hero above the hinge,
+ * trackpad + a vertical deck column below it (DESIGN_SPEC.md §8,
+ * `FoldTabletop.dc.html`). Same caveat as [BookRemoteContent] — unverified
+ * without a physical or emulated foldable to test the actual hinge split on.
+ */
+@Composable
+private fun TabletopRemoteContent(
+    device: AppleTvDevice,
+    state: UiState,
+    vm: RemoteViewModel,
+    feedback: (HapticFeedbackType) -> Unit,
+    fold: androidx.window.layout.FoldingFeature?,
+) {
+    Column(Modifier.fillMaxSize()) {
+        Column(Modifier.weight(1f)) {
+            RemoteHeader(device, state, vm, feedback, appsActive = true, onToggleApps = {})
+            Spacer(Modifier.height(16.dp))
+            NowPlayingHero(device, state, vm, artworkAspect = 1f, modifier = Modifier.weight(1f))
+        }
+
+        // The hinge itself: a plain gap at least as tall as the fold's own
+        // bounds report, so nothing is drawn under it.
+        val hingeHeight = fold?.bounds?.let { with(androidx.compose.ui.platform.LocalDensity.current) { it.height().toDp() } } ?: 0.dp
+        Spacer(Modifier.height(maxOf(hingeHeight, 1.dp)))
+
+        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+            Box(Modifier.weight(1f).fillMaxHeight()) {
+                TouchPad(
+                    modifier = Modifier.fillMaxSize(),
+                    hapticsEnabled = state.settings.hapticsEnabled,
+                    soundEnabled = state.settings.buttonSoundEnabled,
+                    sensitivity = state.settings.sensitivity.multiplier,
+                    connected = !state.reconnecting,
+                    onDirectionDown = { feedback(HapticFeedbackType.LongPress); vm.padDirectionDown(it) },
+                    onDirectionUp = { vm.padDirectionUp(it) },
+                    onSelect = { vm.press(Button.SELECT) },
+                    onSelectDown = { vm.selectDown() },
+                    onSelectUp = { vm.selectUp() },
+                    onTouch = { x, y, phase -> vm.touch(x, y, phase) },
+                )
+            }
+            TabletopDeck(state, vm, Modifier.width(236.dp).fillMaxHeight())
         }
     }
 }
@@ -425,6 +566,190 @@ private fun Deck(state: UiState, vm: RemoteViewModel) {
             up = {
                 Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.volume_up), modifier = Modifier.size(24.dp))
             },
+        )
+    }
+}
+
+/**
+ * The larger Now Playing surface for Book/Tabletop (DESIGN_SPEC.md §8):
+ * artwork at [artworkAspect], title/caption, scrubber and skip buttons — the
+ * same information as [NowPlayingCard], laid out for a pane rather than a
+ * fixed-height card. Falls back to [EnableNowPlaying]'s pairing prompt the
+ * same way [NowPlayingSection] does.
+ */
+@Composable
+private fun NowPlayingHero(
+    device: AppleTvDevice,
+    state: UiState,
+    vm: RemoteViewModel,
+    artworkAspect: Float,
+    modifier: Modifier = Modifier,
+) {
+    val scheme = MaterialTheme.colorScheme
+    val c = Puck.colors
+
+    if (!state.airplayPaired) {
+        Box(modifier.fillMaxWidth()) {
+            EnableNowPlaying(device, state, vm)
+        }
+        return
+    }
+
+    val playing = state.nowPlaying ?: NowPlaying()
+    val artwork = remember(playing.artwork?.size) {
+        playing.artwork?.let { bytes ->
+            runCatching { BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }.getOrNull()
+        }
+    }
+    var position by remember { mutableStateOf(state.positionNow()) }
+    LaunchedEffect(state.playhead, state.playheadAt, state.playheadAdvancing) {
+        position = state.positionNow()
+        while (state.playheadAdvancing) {
+            delay(500)
+            position = state.positionNow()
+        }
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(c.card)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .aspectRatio(artworkAspect)
+                .clip(RoundedCornerShape(16.dp))
+                .background(scheme.tertiaryContainer),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (artwork != null) {
+                Image(
+                    bitmap = artwork.asImageBitmap(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                Icon(Icons.Default.MusicNote, contentDescription = null, tint = scheme.onTertiaryContainer)
+            }
+        }
+
+        Spacer(Modifier.width(16.dp))
+
+        Column(Modifier.weight(1f)) {
+            Text(
+                playing.title ?: stringResource(R.string.nothing_playing),
+                style = PuckText.screenTitle,
+                color = scheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(4.dp))
+            val stateLabel = when (playing.playbackState) {
+                PlaybackState.SEEKING -> stringResource(R.string.state_seeking)
+                PlaybackState.STOPPED -> stringResource(R.string.state_stopped)
+                PlaybackState.INTERRUPTED -> stringResource(R.string.state_interrupted)
+                else -> null
+            }
+            val caption = listOfNotNull(playing.appName ?: stateLabel).joinToString(" · ")
+            if (caption.isNotBlank()) {
+                Text(caption, style = PuckText.body, color = scheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+
+            val elapsed = position
+            val duration = playing.position?.second
+            if (elapsed != null && duration != null) {
+                Spacer(Modifier.height(14.dp))
+                Scrubber(elapsed, duration) { vm.seekTo(it) }
+            }
+
+            if (!state.reconnecting) {
+                Spacer(Modifier.height(10.dp))
+                Row {
+                    PuckRoundButton(onClick = vm::skipToPrevious, size = 52.dp, containerColor = c.raised, contentColor = scheme.onSurface) {
+                        Icon(Icons.Default.SkipPrevious, contentDescription = stringResource(R.string.skip_previous_track), modifier = Modifier.size(22.dp))
+                    }
+                    Spacer(Modifier.width(10.dp))
+                    PuckRoundButton(onClick = vm::skipToNext, size = 52.dp, containerColor = c.raised, contentColor = scheme.onSurface) {
+                        Icon(Icons.Default.SkipNext, contentDescription = stringResource(R.string.skip_next_track), modifier = Modifier.size(22.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The deck turned sideways for Tabletop (DESIGN_SPEC.md §8, `FoldTabletop.dc.html`):
+ * play/pause on top, back/home below it, then the volume rocker — the same
+ * buttons as [Deck], stacked instead of in a row.
+ */
+@Composable
+private fun TabletopDeck(state: UiState, vm: RemoteViewModel, modifier: Modifier = Modifier) {
+    val feedback = rememberFeedback(state.settings.hapticsEnabled, state.settings.buttonSoundEnabled)
+    val scheme = MaterialTheme.colorScheme
+    val c = Puck.colors
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(36.dp))
+            .background(c.tray)
+            .padding(14.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        val isPlaying = state.nowPlaying?.playbackState == PlaybackState.PLAYING
+        Box(
+            modifier = Modifier
+                .size(104.dp)
+                .clip(CircleShape)
+                .background(c.tray)
+                .border(1.dp, scheme.outlineVariant, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            PuckRoundButton(
+                onClick = { feedback(HapticFeedbackType.LongPress); vm.press(Button.PLAY_PAUSE) },
+                size = 92.dp,
+                containerColor = scheme.primaryContainer,
+                contentColor = scheme.onPrimaryContainer,
+            ) {
+                Icon(
+                    if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
+                    modifier = Modifier.size(34.dp),
+                )
+            }
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            PuckRoundButton(
+                onClick = { feedback(HapticFeedbackType.LongPress); vm.press(Button.MENU) },
+                size = 68.dp,
+                containerColor = scheme.secondaryContainer,
+                contentColor = scheme.onSecondaryContainer,
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.menu), modifier = Modifier.size(26.dp))
+            }
+            PuckRoundButton(
+                onClick = { feedback(HapticFeedbackType.LongPress); vm.press(Button.HOME) },
+                size = 68.dp,
+                containerColor = scheme.secondaryContainer,
+                contentColor = scheme.onSecondaryContainer,
+            ) {
+                Icon(Icons.Default.Home, contentDescription = stringResource(R.string.home), modifier = Modifier.size(26.dp))
+            }
+        }
+
+        Spacer(Modifier.weight(1f))
+
+        PuckVolumeRocker(
+            onDown = { feedback(HapticFeedbackType.LongPress); vm.volumeDown() },
+            onUp = { feedback(HapticFeedbackType.LongPress); vm.volumeUp() },
+            down = { Icon(Icons.Default.VolumeDown, contentDescription = stringResource(R.string.volume_down), modifier = Modifier.size(24.dp)) },
+            up = { Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.volume_up), modifier = Modifier.size(24.dp)) },
         )
     }
 }

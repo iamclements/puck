@@ -109,6 +109,8 @@
     <string name="skip_forward">Forward 10 seconds</string>
     <string name="skip_previous_track">Previous track</string>
     <string name="skip_next_track">Next track</string>
+    <!-- Book layout's app-grid section label (DESIGN_SPEC.md §8). -->
+    <string name="apps_label">Apps</string>
 
     <!-- Now playing -->
     <string name="nothing_playing">Nothing playing</string>
