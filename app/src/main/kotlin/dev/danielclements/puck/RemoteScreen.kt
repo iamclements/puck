@@ -1193,25 +1193,29 @@ private fun EnableNowPlaying(
 
 @Composable
 private fun AppGrid(state: UiState, vm: RemoteViewModel, modifier: Modifier = Modifier, columns: Int = 3) {
-    if (state.apps.isEmpty()) {
-        Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
-            Text(
-                stringResource(R.string.loading_apps),
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        return
-    }
-
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(columns),
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+    Box(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(30.dp))
+            .background(Puck.colors.tray)
+            .padding(14.dp),
     ) {
-        items(state.apps, key = { it.bundleId }) { app ->
-            AppTile(app) { vm.launchApp(app.bundleId) }
+        if (state.apps.isEmpty()) {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                Text(stringResource(R.string.loading_apps), style = PuckText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            return@Box
+        }
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(columns),
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            items(state.apps, key = { it.bundleId }) { app ->
+                AppTile(app) { vm.launchApp(app.bundleId) }
+            }
         }
     }
 }
@@ -1247,7 +1251,7 @@ private fun AppTile(app: AppInfo, onClick: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(5f / 3f)
-                .clip(RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(14.dp))
                 .background(tile)
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center,
@@ -1283,7 +1287,7 @@ private fun AppTile(app: AppInfo, onClick: () -> Unit) {
 
         Text(
             app.name,
-            fontSize = 11.sp,
+            style = PuckText.caption,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

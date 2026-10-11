@@ -2,7 +2,7 @@ package dev.danielclements.puck
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -16,151 +16,181 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Vibration
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.activity.compose.BackHandler
 
 @Composable
 fun SettingsScreen(state: UiState, vm: RemoteViewModel) {
     BackHandler { vm.closeSettings() }
+    val scheme = MaterialTheme.colorScheme
+    val c = Puck.colors
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.systemBars)
-            .padding(24.dp),
+            .padding(horizontal = 16.dp)
+            .padding(top = 14.dp, bottom = 22.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.cd_back),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .clickable { vm.closeSettings() }
-                    .padding(8.dp),
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                stringResource(R.string.settings_title),
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
+        Row(
+            modifier = Modifier.height(52.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PuckRoundButton(onClick = { vm.closeSettings() }, size = 44.dp, containerColor = c.raised, contentColor = scheme.onSurface) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back), modifier = Modifier.size(20.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            Text(stringResource(R.string.settings_title), style = PuckText.screenTitle, color = scheme.onBackground)
         }
 
         Spacer(Modifier.height(24.dp))
-        SectionHeader(stringResource(R.string.settings_section_control))
-        Spacer(Modifier.height(8.dp))
+        SectionLabel(stringResource(R.string.settings_section_control))
+        Spacer(Modifier.height(10.dp))
 
-        SettingsCard {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(30.dp))
+                .background(c.tray)
+                .padding(6.dp),
+        ) {
             SwitchRow(
+                icon = Icons.Default.Vibration,
                 title = stringResource(R.string.settings_haptics),
                 subtitle = stringResource(R.string.settings_haptics_desc),
                 checked = state.settings.hapticsEnabled,
                 onCheckedChange = vm::setHaptics,
             )
-            Divider()
+            Spacer(Modifier.height(4.dp))
             SwitchRow(
+                icon = Icons.Default.VolumeUp,
                 title = stringResource(R.string.settings_button_sound),
                 subtitle = stringResource(R.string.settings_button_sound_desc),
                 checked = state.settings.buttonSoundEnabled,
                 onCheckedChange = vm::setButtonSound,
             )
-            Divider()
-            Column(Modifier.padding(16.dp)) {
-                Text(
-                    stringResource(R.string.settings_sensitivity),
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface,
+            Spacer(Modifier.height(4.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(c.card)
+                    .padding(14.dp, 14.dp, 14.dp, 12.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconTile(Icons.Default.TouchApp)
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.settings_sensitivity), style = PuckText.rowTitle, color = scheme.onSurface)
+                        Text(stringResource(R.string.settings_sensitivity_desc), style = PuckText.caption, color = scheme.onSurfaceVariant)
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+                PuckSegmentedPicker(
+                    options = TouchSensitivity.entries.toList(),
+                    selected = state.settings.sensitivity,
+                    onSelect = vm::setSensitivity,
+                    label = { level ->
+                        when (level) {
+                            TouchSensitivity.LOW -> stringResource(R.string.settings_sensitivity_low)
+                            TouchSensitivity.MEDIUM -> stringResource(R.string.settings_sensitivity_medium)
+                            TouchSensitivity.HIGH -> stringResource(R.string.settings_sensitivity_high)
+                        }
+                    },
                 )
-                Spacer(Modifier.height(10.dp))
-                SensitivityPicker(state.settings.sensitivity, vm::setSensitivity)
             }
         }
 
         Spacer(Modifier.height(24.dp))
-        SectionHeader(stringResource(R.string.settings_section_devices))
-        Spacer(Modifier.height(8.dp))
+        SectionLabel(stringResource(R.string.settings_section_devices))
+        Spacer(Modifier.height(10.dp))
 
-        SettingsCard {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(30.dp))
+                .background(c.tray)
+                .padding(6.dp),
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(c.card)
                     .clickable { vm.openManageDevices() }
-                    .padding(16.dp),
+                    .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(scheme.primaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Default.Tv, contentDescription = null, tint = scheme.onPrimaryContainer, modifier = Modifier.size(20.dp))
+                }
+                Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.settings_manage_devices), style = PuckText.rowTitle, color = scheme.onSurface)
                     Text(
-                        stringResource(R.string.settings_manage_devices),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        stringResource(R.string.settings_manage_devices_desc),
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        stringResource(R.string.settings_manage_devices_desc, state.managedDevices.size),
+                        style = PuckText.caption,
+                        color = scheme.onSurfaceVariant,
                     )
                 }
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = scheme.onSurfaceVariant)
             }
         }
+
+        Spacer(Modifier.weight(1f))
+        Text(
+            stringResource(R.string.settings_footer),
+            style = PuckText.caption,
+            color = scheme.onSurfaceVariant,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        )
     }
 }
 
 @Composable
-private fun SectionHeader(title: String) {
-    Text(
-        title,
-        fontSize = 13.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.primary,
-    )
+private fun SectionLabel(title: String) {
+    Text(title, style = PuckText.label, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp))
 }
 
 @Composable
-private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
-    Column(
+private fun IconTile(icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surface),
-        content = content,
-    )
-}
-
-@Composable
-private fun Divider() {
-    androidx.compose.material3.HorizontalDivider(
-        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-    )
+            .size(40.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Puck.colors.raised),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+    }
 }
 
 @Composable
 private fun SwitchRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     subtitle: String,
     checked: Boolean,
@@ -169,61 +199,18 @@ private fun SwitchRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(Puck.colors.card)
             .clickable { onCheckedChange(!checked) }
-            .padding(16.dp),
+            .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        IconTile(icon)
+        Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text(
-                title,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                subtitle,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Text(title, style = PuckText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
+            Text(subtitle, style = PuckText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
-
-@Composable
-private fun SensitivityPicker(selected: TouchSensitivity, onSelect: (TouchSensitivity) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        val options = listOf(
-            TouchSensitivity.LOW to stringResource(R.string.settings_sensitivity_low),
-            TouchSensitivity.MEDIUM to stringResource(R.string.settings_sensitivity_medium),
-            TouchSensitivity.HIGH to stringResource(R.string.settings_sensitivity_high),
-        )
-        options.forEach { (value, label) ->
-            val isSelected = value == selected
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(
-                        if (isSelected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.surfaceVariant,
-                    )
-                    .clickable { onSelect(value) },
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    label,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
+        PuckSwitch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }

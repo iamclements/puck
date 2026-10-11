@@ -296,7 +296,13 @@ class RemoteViewModel(
 
     // --------------------------------------------------------------- settings
 
-    fun openSettings() = _state.update { it.copy(screen = Screen.Settings) }
+    fun openSettings() {
+        // So the "n paired" count on the Manage Devices row is accurate the
+        // first time Settings is opened this session, not just after the
+        // user has already visited Manage Devices once.
+        refreshManagedDevices()
+        _state.update { it.copy(screen = Screen.Settings) }
+    }
 
     fun closeSettings() = _state.update { it.copy(screen = Screen.DeviceList) }
 

@@ -12,7 +12,12 @@
     <string name="disclaimer">Not affiliated with Apple Inc. Apple TV and AirPlay are trademarks of Apple Inc.</string>
 
     <!-- Device list -->
+    <!-- Lowercase, deliberately: the wordmark treatment (DESIGN_SPEC.md §7), not a
+         restyling of the app's own name elsewhere (app_name stays "Puck"). -->
+    <string name="app_name_lower">puck</string>
     <string name="devices_subtitle">Devices on your network</string>
+    <string name="found_count">FOUND %1$d</string>
+    <string name="listening">LISTENING</string>
     <string name="shortcut_long_label">Open %1$s</string>
 
     <!-- Home-screen widget -->
@@ -37,18 +42,24 @@
     <string name="settings_button_sound">Button sound</string>
     <string name="settings_button_sound_desc">Play a click sound on each button tap</string>
     <string name="settings_sensitivity">Touchpad sensitivity</string>
+    <string name="settings_sensitivity_desc">How far a swipe moves the focus</string>
     <string name="settings_sensitivity_low">Low</string>
     <string name="settings_sensitivity_medium">Medium</string>
     <string name="settings_sensitivity_high">High</string>
     <string name="settings_section_devices">Devices</string>
     <string name="settings_manage_devices">Manage paired devices</string>
-    <string name="settings_manage_devices_desc">Rename or forget a paired Apple TV</string>
+    <string name="settings_manage_devices_desc">%1$d paired · rename or forget</string>
+    <string name="settings_footer">Puck · open source</string>
 
     <!-- Manage devices -->
     <string name="manage_devices_title">Manage devices</string>
     <string name="manage_devices_empty">No paired Apple TVs yet.</string>
+    <string name="manage_devices_section">PAIRED · %1$d</string>
+    <string name="manage_devices_footnote">Forgetting a TV removes its pairing keys from this phone. You\'ll need a new code to pair again.</string>
     <string name="rename_device_title">Rename %1$s</string>
+    <string name="rename_device_hint">Only changes the name in Puck.</string>
     <string name="rename">Rename</string>
+    <string name="keep">Keep</string>
     <string name="device_name_hint">Name</string>
     <string name="forget_device_title">Forget %1$s?</string>
     <string name="forget_device_message">You\'ll need to pair again to control it.</string>
@@ -70,6 +81,8 @@
     <string name="pin_pair_with">Pair with %1$s</string>
     <string name="pin_airplay_hint">Now Playing uses a separate AirPlay pairing. Enter the new code shown on your TV.</string>
     <string name="pin_hint">Enter the 4-digit code shown on your TV.</string>
+    <string name="pin_code_label">4-DIGIT CODE</string>
+    <string name="pin_enable_cta">Enable</string>
     <string name="pairing">Pairing…</string>
     <string name="pair">Pair</string>
     <string name="cancel">Cancel</string>
