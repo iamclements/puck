@@ -1025,6 +1025,10 @@ class RemoteViewModel(
         command { skipBy(seconds) }
     }
 
+    /** Previous/next track, for the Now Playing card's skip buttons. */
+    fun skipToPrevious() = command { previousTrack() }
+    fun skipToNext() = command { nextTrack() }
+
     /**
      * Seek to an absolute position. Companion Link only offers a relative
      * skip, so this asks for the difference from where the playhead is

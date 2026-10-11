@@ -3,6 +3,7 @@ package dev.danielclements.puck
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.ExitTransition
@@ -10,6 +11,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -56,6 +58,8 @@ import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.VolumeDown
 import androidx.compose.material.icons.filled.VolumeUp
@@ -73,6 +77,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
@@ -80,6 +86,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.foundation.Image
@@ -152,83 +160,90 @@ fun RemoteScreen(device: AppleTvDevice, state: UiState, vm: RemoteViewModel) {
         }
 
         Column(Modifier.fillMaxSize()) {
-        // ---- header ----
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.cd_disconnect),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .clickable { vm.disconnect() }
-                    .padding(8.dp),
-            )
-            Spacer(Modifier.width(8.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    device.name,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
+        // ---- header (DESIGN_SPEC.md §6.1) ----
+        Row(
+            modifier = Modifier.height(52.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PuckRoundButton(
+                onClick = { vm.disconnect() },
+                size = 44.dp,
+                containerColor = Puck.colors.raised,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.cd_disconnect),
+                    modifier = Modifier.size(20.dp),
                 )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(device.name, style = PuckText.deviceTitle, color = MaterialTheme.colorScheme.onSurface)
+                Spacer(Modifier.height(4.dp))
                 val subtitle = when {
                     state.reconnecting -> stringResource(R.string.reconnecting)
                     state.capabilities?.volume == true && state.volume != null ->
                         stringResource(R.string.volume_percent, (state.volume * 100).toInt())
                     else -> stringResource(R.string.connected)
                 }
-                Text(
-                    subtitle,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Icon(
-                Icons.Default.Keyboard,
-                contentDescription = stringResource(R.string.cd_keyboard),
-                tint = if (state.keyboardOpen) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .clickable { vm.toggleKeyboard() }
-                    .padding(8.dp),
-            )
-            Spacer(Modifier.width(4.dp))
-            Icon(
-                Icons.Default.Apps,
-                contentDescription = stringResource(R.string.cd_apps),
-                tint = if (showApps) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .clickable { showApps = !showApps }
-                    .padding(8.dp),
-            )
-            Spacer(Modifier.width(4.dp))
-            // A tap opens Control Centre, which is what the remote's own power
-            // button does — sleeping outright, with no confirmation and no way
-            // back, is not what pressing power on a remote means. Sleep lives
-            // inside that panel; waking does not, since a sleeping TV has no
-            // panel to open, so it stays on the hold.
-            Icon(
-                Icons.Default.PowerSettingsNew,
-                contentDescription = stringResource(R.string.cd_power),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .combinedClickable(
-                        onClick = { vm.holdHome() },
-                        onLongClick = {
-                            feedback(HapticFeedbackType.LongPress)
-                            vm.wake()
-                        },
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val dotColor = if (state.reconnecting) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
+                    Box(
+                        Modifier
+                            .size(8.dp)
+                            .then(
+                                if (!state.reconnecting) {
+                                    Modifier.drawBehind {
+                                        drawCircle(dotColor.copy(alpha = 0.2f), radius = size.width * 0.9f)
+                                    }
+                                } else Modifier,
+                            )
+                            .clip(CircleShape)
+                            .background(dotColor),
                     )
-                    .padding(8.dp),
-            )
+                    Spacer(Modifier.width(7.dp))
+                    Text(subtitle, style = PuckText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            Spacer(Modifier.width(8.dp))
+            PuckActionTray {
+                PuckTrayIconButton(onClick = { vm.toggleKeyboard() }, active = state.keyboardOpen) {
+                    Icon(Icons.Default.Keyboard, contentDescription = stringResource(R.string.cd_keyboard), modifier = Modifier.size(20.dp))
+                }
+                PuckTrayIconButton(onClick = { showApps = !showApps }, active = showApps) {
+                    Icon(Icons.Default.Apps, contentDescription = stringResource(R.string.cd_apps), modifier = Modifier.size(20.dp))
+                }
+                // A tap opens Control Centre, which is what the remote's own power
+                // button does — sleeping outright, with no confirmation and no way
+                // back, is not what pressing power on a remote means. Sleep lives
+                // inside that panel; waking does not, since a sleeping TV has no
+                // panel to open, so it stays on the hold. The quiet arc is only a
+                // hint that holding it does something different — tap/hold itself
+                // is unchanged.
+                Box(
+                    Modifier
+                        .size(42.dp)
+                        .puckHintArc(MaterialTheme.colorScheme.tertiary)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.tertiaryContainer)
+                        .combinedClickable(
+                            onClick = { vm.holdHome() },
+                            onLongClick = {
+                                feedback(HapticFeedbackType.LongPress)
+                                vm.wake()
+                            },
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Default.PowerSettingsNew,
+                        contentDescription = stringResource(R.string.cd_power),
+                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                        modifier = Modifier.size(19.dp),
+                    )
+                }
+            }
         }
 
         state.error?.let { message ->
@@ -242,7 +257,7 @@ fun RemoteScreen(device: AppleTvDevice, state: UiState, vm: RemoteViewModel) {
             exit = ExitTransition.None,
         ) {
             Spacer(Modifier.height(12.dp))
-            TextEntry(state, vm)
+            TextEntry(device, state, vm)
         }
 
 
@@ -283,6 +298,7 @@ fun RemoteScreen(device: AppleTvDevice, state: UiState, vm: RemoteViewModel) {
                     hapticsEnabled = state.settings.hapticsEnabled,
                     soundEnabled = state.settings.buttonSoundEnabled,
                     sensitivity = state.settings.sensitivity.multiplier,
+                    connected = !state.reconnecting,
                     onDirectionDown = {
                         feedback(HapticFeedbackType.LongPress)
                         vm.padDirectionDown(it)
@@ -301,9 +317,7 @@ fun RemoteScreen(device: AppleTvDevice, state: UiState, vm: RemoteViewModel) {
             }
 
             Spacer(Modifier.weight(1f))
-            TransportRow(state, vm)
-            Spacer(Modifier.weight(1f))
-            VolumeRow(state, vm)
+            Deck(state, vm)
             Spacer(Modifier.weight(1f))
         }
 
@@ -329,54 +343,89 @@ private fun NowPlayingSection(
     else EnableNowPlaying(device, state, vm)
 }
 
+/**
+ * The deck: a tray holding the transport row (back/menu, play/pause with its
+ * "moat" ring, home) and the volume rocker (DESIGN_SPEC.md §6.3).
+ */
 @Composable
-private fun TransportRow(state: UiState, vm: RemoteViewModel) {
+private fun Deck(state: UiState, vm: RemoteViewModel) {
     val feedback = rememberFeedback(state.settings.hapticsEnabled, state.settings.buttonSoundEnabled)
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
+    val scheme = MaterialTheme.colorScheme
+    val c = Puck.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(36.dp))
+            .background(c.tray)
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        RoundButton(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.menu)) {
-            feedback(HapticFeedbackType.LongPress)
-            vm.press(Button.MENU)
-        }
-
-        // One button toggles playback, so it shows the action it will
-        // perform. Without now-playing there is no state to reflect, and
-        // it falls back to the play glyph.
-        val isPlaying = state.nowPlaying?.playbackState == PlaybackState.PLAYING
-        RoundButton(
-            icon = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-            description = stringResource(if (isPlaying) R.string.pause else R.string.play),
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            feedback(HapticFeedbackType.LongPress)
-            vm.press(Button.PLAY_PAUSE)
+            PuckRoundButton(
+                onClick = { feedback(HapticFeedbackType.LongPress); vm.press(Button.MENU) },
+                size = 68.dp,
+                containerColor = scheme.secondaryContainer,
+                contentColor = scheme.onSecondaryContainer,
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.menu),
+                    modifier = Modifier.size(26.dp),
+                )
+            }
+
+            // One button toggles playback, so it shows the action it will
+            // perform. Without now-playing there is no state to reflect, and
+            // it falls back to the play glyph.
+            val isPlaying = state.nowPlaying?.playbackState == PlaybackState.PLAYING
+            Box(
+                modifier = Modifier
+                    .size(104.dp)
+                    .clip(CircleShape)
+                    .background(c.tray)
+                    .border(1.dp, scheme.outlineVariant, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                PuckRoundButton(
+                    onClick = { feedback(HapticFeedbackType.LongPress); vm.press(Button.PLAY_PAUSE) },
+                    size = 92.dp,
+                    containerColor = scheme.primaryContainer,
+                    contentColor = scheme.onPrimaryContainer,
+                ) {
+                    Icon(
+                        if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
+                        modifier = Modifier.size(34.dp),
+                    )
+                }
+            }
+
+            PuckRoundButton(
+                onClick = { feedback(HapticFeedbackType.LongPress); vm.press(Button.HOME) },
+                size = 68.dp,
+                containerColor = scheme.secondaryContainer,
+                contentColor = scheme.onSecondaryContainer,
+            ) {
+                Icon(Icons.Default.Home, contentDescription = stringResource(R.string.home), modifier = Modifier.size(26.dp))
+            }
         }
 
-        RoundButton(Icons.Default.Home, stringResource(R.string.home)) {
-            feedback(HapticFeedbackType.LongPress)
-            vm.press(Button.HOME)
-        }
-    }
-}
-
-@Composable
-private fun VolumeRow(state: UiState, vm: RemoteViewModel) {
-    val feedback = rememberFeedback(state.settings.hapticsEnabled, state.settings.buttonSoundEnabled)
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        // A touch taller than the icon alone so the row balances against the
-        // 76 dp transport buttons above it instead of looking squeezed.
-        PillButton(Icons.Default.VolumeDown, stringResource(R.string.volume_down), Modifier.weight(1f).height(60.dp)) {
-            feedback(HapticFeedbackType.LongPress)
-            vm.volumeDown()
-        }
-        PillButton(Icons.Default.VolumeUp, stringResource(R.string.volume_up), Modifier.weight(1f).height(60.dp)) {
-            feedback(HapticFeedbackType.LongPress)
-            vm.volumeUp()
-        }
+        PuckVolumeRocker(
+            onDown = { feedback(HapticFeedbackType.LongPress); vm.volumeDown() },
+            onUp = { feedback(HapticFeedbackType.LongPress); vm.volumeUp() },
+            down = {
+                Icon(Icons.Default.VolumeDown, contentDescription = stringResource(R.string.volume_down), modifier = Modifier.size(24.dp))
+            },
+            up = {
+                Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.volume_up), modifier = Modifier.size(24.dp))
+            },
+        )
     }
 }
 
@@ -400,12 +449,16 @@ private fun VolumeRow(state: UiState, vm: RemoteViewModel) {
  *
  * tvOS repeats a held direction itself, so rim holds send the direction once.
  */
+/** The real centre-vs-edge hit threshold, as a fraction of the pad's own diameter — see [TouchPad]'s gesture block. */
+private const val ZONE_DIAMETER_FRACTION = 0.38f * 2f
+
 @Composable
 private fun TouchPad(
     modifier: Modifier = Modifier,
     hapticsEnabled: Boolean = true,
     soundEnabled: Boolean = false,
     sensitivity: Float = 1f,
+    connected: Boolean = true,
     onDirectionDown: (Button) -> Unit,
     onDirectionUp: (Button) -> Unit,
     onSelect: () -> Unit,
@@ -415,29 +468,36 @@ private fun TouchPad(
 ) {
     val feedback = rememberFeedback(hapticsEnabled, soundEnabled)
     val touchPadDescription = stringResource(R.string.touchpad_description)
+    val scheme = MaterialTheme.colorScheme
+    val puckColors = Puck.colors
+
+    // Drawing-only state the gesture block below feeds as it runs — none of
+    // it is read by the gesture logic itself, only by drawTrackpad().
+    var touchPoint by remember { mutableStateOf<Offset?>(null) }
+    var touchTrail by remember { mutableStateOf<List<Offset>>(emptyList()) }
+    var centerPressed by remember { mutableStateOf(false) }
+    val ringAlpha by animateFloatAsState(
+        targetValue = if (connected) 1f else 0f,
+        animationSpec = tween(400),
+        label = "trackpadRing",
+    )
 
     BoxWithConstraints(
         modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
         val side = minOf(maxWidth, maxHeight)
+        val haloColor = scheme.primary.copy(alpha = 0.08f)
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(side)
-                .clip(RoundedCornerShape(percent = 35))
-                // Always this dark glass, regardless of the app's own
-                // light/dark theme — the hardware clickpad doesn't change
-                // color with the room either. The gradient is the only nod
-                // to it being glass rather than a flat swatch: a soft
-                // highlight toward the top-left, same as the glossy-plastic
-                // reflection in product photos of the real remote.
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(Color(0xFF3A3A3E), Color(0xFF050506)),
-                    ),
+                .then(
+                    if (connected) Modifier.border(6.dp, haloColor, RoundedCornerShape(percent = 35))
+                    else Modifier,
                 )
+                .clip(RoundedCornerShape(percent = 35))
                 .pointerInput(Unit) {
                     val centre = 500f
                     // Frac is measured against a fixed reference pad — the size
@@ -529,6 +589,9 @@ private fun TouchPad(
                             lastPos = pos
                             lastTime = time
                             onTouch(vx.toInt(), vy.toInt(), TouchPhase.HOLD)
+                            // Drawing only: the live finger dot and its short trail.
+                            touchPoint = pos
+                            touchTrail = (touchTrail + pos).takeLast(8)
                         }
 
                         // Phase 1: for centre touches, wait for up (tap), the
@@ -546,6 +609,7 @@ private fun TouchPad(
                             }
                             if (finished == null) {
                                 holdSelect = true
+                                centerPressed = true
                                 onSelectDown()
                                 while (true) {
                                     val event = awaitPointerEvent()
@@ -553,6 +617,7 @@ private fun TouchPad(
                                     if (change.changedToUp()) { upPos = change.position; break }
                                     change.consume()
                                 }
+                                centerPressed = false
                             }
                         } else {
                             // Rim: the direction is already held down; a
@@ -578,6 +643,8 @@ private fun TouchPad(
                                 change.consume()
                             }
                             onTouch(vx.toInt(), vy.toInt(), TouchPhase.RELEASE)
+                            touchPoint = null
+                            touchTrail = emptyList()
                         } else {
                             when {
                                 holdSelect -> onSelectUp()
@@ -606,10 +673,26 @@ private fun TouchPad(
         ) {
             // Deliberately no printed arrows or "OK" — the hardware clickpad
             // carries no labels either, and its shape and the gesture
-            // behaviour alone teach a tap from a hold from a swipe. Printed
-            // glyphs here would be the one thing this pad has that the real
-            // one doesn't. TalkBack still gets a description (below), just
-            // not a visible one.
+            // behaviour alone teach a tap from a hold from a swipe. The
+            // "disc system" drawing layer below (well, live ring, edge
+            // ticks, zone line, dimple, touch feedback) is purely tonal —
+            // see PuckDepth.kt's drawTrackpad(). TalkBack still gets a
+            // description (above), just not a visible one.
+            Canvas(Modifier.fillMaxSize()) {
+                drawTrackpad(
+                    s = TrackpadVisualState(
+                        connected = connected,
+                        ringAlpha = ringAlpha,
+                        touch = touchPoint,
+                        trail = touchTrail,
+                        centerPressed = centerPressed,
+                        zoneDiameterFraction = ZONE_DIAMETER_FRACTION,
+                    ),
+                    scheme = scheme,
+                    c = puckColors,
+                    corner = side * 0.35f,
+                )
+            }
         }
     }
 }
@@ -619,7 +702,7 @@ private fun TouchPad(
  * down — first repeat after [firstDelayMs], then every [stepDelayMs]. How the
  * volume keys step without being tapped over and over.
  */
-private fun Modifier.repeatOnHold(
+fun Modifier.repeatOnHold(
     firstDelayMs: Long = 400,
     stepDelayMs: Long = 150,
     onPressedChange: (Boolean) -> Unit = {},
@@ -694,37 +777,6 @@ private const val RIM_COMMIT_DP = 40
  */
 private const val CENTRE_COMMIT_DP = 60
 
-@Composable
-private fun RoundButton(icon: ImageVector, description: String, onClick: () -> Unit) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    // A flat filled circle gives no feedback that it's a button rather than
-    // a badge — the shadow says "raised, tappable" at rest, and the dip on
-    // press is the same physical cue a real key gives.
-    val scale by animateFloatAsState(if (pressed) 0.92f else 1f, label = "roundButtonScale")
-    Box(
-        modifier = Modifier
-            .size(76.dp)
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .shadow(elevation = if (pressed) 1.dp else 5.dp, shape = CircleShape, clip = false)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primaryContainer)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = LocalIndication.current,
-                onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            icon,
-            contentDescription = description,
-            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier.size(30.dp),
-        )
-    }
-}
-
 /**
  * Text entry for the focused field on the Apple TV.
  *
@@ -733,77 +785,83 @@ private fun RoundButton(icon: ImageVector, description: String, onClick: () -> U
  * slow and racy.
  */
 @Composable
-private fun TextEntry(state: UiState, vm: RemoteViewModel) {
+private fun TextEntry(device: AppleTvDevice, state: UiState, vm: RemoteViewModel) {
     var draft by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
+    val scheme = MaterialTheme.colorScheme
+    val c = Puck.colors
 
     LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
+    // Styled per DESIGN_SPEC.md §6.5's panel (raised fill, well field with a
+    // primary border, a primary send puck) but kept as the existing inline
+    // expanding panel rather than turned into a real bottom sheet overlay —
+    // that would change whether the trackpad stays mounted underneath it,
+    // which is layout behavior, not presentation.
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(c.raised)
+            .padding(16.dp),
+    ) {
+        Text(
+            stringResource(R.string.keyboard_panel_label, device.name.uppercase()),
+            style = PuckText.label,
+            color = scheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(10.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
                 value = draft,
                 onValueChange = { draft = it },
                 modifier = Modifier
                     .weight(1f)
+                    .height(56.dp)
                     .focusRequester(focusRequester),
                 singleLine = true,
+                shape = RoundedCornerShape(20.dp),
                 placeholder = { Text(stringResource(R.string.type_on_tv)) },
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = c.well,
+                    unfocusedContainerColor = c.well,
+                    focusedBorderColor = scheme.primary,
+                    unfocusedBorderColor = scheme.outlineVariant,
+                ),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = {
                     vm.sendText(draft)
                     draft = ""
                 }),
             )
-            Spacer(Modifier.width(8.dp))
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface)
-                    .clickable {
-                        vm.sendText(draft)
-                        draft = ""
-                    },
-                contentAlignment = Alignment.Center,
+            Spacer(Modifier.width(10.dp))
+            PuckRoundButton(
+                onClick = { vm.sendText(draft); draft = "" },
+                size = 56.dp,
+                containerColor = scheme.primary,
+                contentColor = scheme.onPrimary,
             ) {
-                Icon(
-                    Icons.Default.Send,
-                    contentDescription = stringResource(R.string.send_text),
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp),
-                )
+                Icon(Icons.Default.Send, contentDescription = stringResource(R.string.send_text), modifier = Modifier.size(20.dp))
             }
-            Spacer(Modifier.width(4.dp))
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface)
-                    .clickable { vm.clearText() },
-                contentAlignment = Alignment.Center,
+            Spacer(Modifier.width(8.dp))
+            PuckRoundButton(
+                onClick = { vm.clearText() },
+                size = 56.dp,
+                containerColor = c.card,
+                contentColor = scheme.onSurfaceVariant,
             ) {
-                Icon(
-                    Icons.Default.Backspace,
-                    contentDescription = stringResource(R.string.clear_field),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
+                Icon(Icons.Default.Backspace, contentDescription = stringResource(R.string.clear_field), modifier = Modifier.size(20.dp))
             }
         }
 
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(8.dp))
         val status = when {
             state.checkingField -> stringResource(R.string.checking_field)
             state.fieldText == null -> stringResource(R.string.no_field)
             state.fieldText.isEmpty() -> stringResource(R.string.field_empty)
             else -> stringResource(R.string.field_is, state.fieldText)
         }
-        Text(
-            status,
-            fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Text(status, style = PuckText.caption, color = scheme.onSurfaceVariant)
     }
 }
 
@@ -833,111 +891,152 @@ private fun NowPlayingCard(state: UiState, playing: NowPlaying, vm: RemoteViewMo
         }
     }
 
-    Column(
+    val scheme = MaterialTheme.colorScheme
+    val c = Puck.colors
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             // Fixed height: the card must occupy the same space whether it is
             // empty or full — the pad's touch geometry depends on it.
             .height(188.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(14.dp),
+            .clip(RoundedCornerShape(24.dp))
+            .background(c.card),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (artwork != null) {
-                    Image(
-                        bitmap = artwork.asImageBitmap(),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                } else {
-                    Icon(
-                        Icons.Default.MusicNote,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-
-            Spacer(Modifier.width(12.dp))
-
-            Column(Modifier.weight(1f)) {
-                // The app is the source line. Playing and paused are already
-                // obvious from the transport glyph, so only the states that
-                // are not are worth spelling out.
-                val stateLabel = when (playing.playbackState) {
-                    PlaybackState.SEEKING -> stringResource(R.string.state_seeking)
-                    PlaybackState.STOPPED -> stringResource(R.string.state_stopped)
-                    PlaybackState.INTERRUPTED -> stringResource(R.string.state_interrupted)
-                    else -> null
-                }
-                val caption = listOfNotNull(playing.appName, stateLabel).joinToString(" · ")
-                if (caption.isNotBlank()) {
-                    Text(
-                        caption,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                Text(
-                    playing.title ?: stringResource(R.string.nothing_playing),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                playing.artist?.takeIf { it.isNotBlank() }?.let {
-                    Text(
-                        it,
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-        }
-
-        val elapsed = position
-        val duration = playing.position?.second
-        if (elapsed != null && duration != null) {
-            Spacer(Modifier.height(12.dp))
-            Scrubber(elapsed, duration) { vm.seekTo(it) }
-        }
-
-        // Transport stays available while paused: skipping about is as useful
-        // then as it is during playback. The play/pause button itself lives in
-        // the bottom transport row, so it is not repeated here.
-        val seekable = playing.playbackState in setOf(
-            PlaybackState.PLAYING, PlaybackState.PAUSED, PlaybackState.SEEKING,
-        )
-        if (seekable) {
-            Spacer(Modifier.height(6.dp))
+        Column(Modifier.fillMaxSize().padding(10.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TransportButton(Icons.Default.Replay10, stringResource(R.string.skip_back), 30.dp) {
-                    vm.skip(-SKIP_SECONDS)
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(scheme.tertiaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (artwork != null) {
+                        Image(
+                            bitmap = artwork.asImageBitmap(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.MusicNote,
+                            contentDescription = null,
+                            tint = scheme.onTertiaryContainer,
+                        )
+                    }
                 }
-                TransportButton(Icons.Default.Forward10, stringResource(R.string.skip_forward), 30.dp) {
-                    vm.skip(SKIP_SECONDS)
+
+                Spacer(Modifier.width(12.dp))
+
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        playing.title ?: stringResource(R.string.nothing_playing),
+                        style = PuckText.rowTitle,
+                        color = scheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(3.dp))
+                    // The app is the source line. Playing and paused are
+                    // already obvious from the transport glyph, so only the
+                    // states that are not are worth spelling out.
+                    val stateLabel = when (playing.playbackState) {
+                        PlaybackState.SEEKING -> stringResource(R.string.state_seeking)
+                        PlaybackState.STOPPED -> stringResource(R.string.state_stopped)
+                        PlaybackState.INTERRUPTED -> stringResource(R.string.state_interrupted)
+                        else -> null
+                    }
+                    val elapsedLabel = position?.let { formatTime(it) }
+                    val caption = listOfNotNull(playing.appName ?: stateLabel, elapsedLabel).joinToString(" · ")
+                    if (caption.isNotBlank()) {
+                        Text(
+                            caption,
+                            style = PuckText.caption,
+                            color = scheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
+
+                // New: previous/next track skip buttons, shown only while
+                // connected — Now Playing being enabled at all is already
+                // guaranteed by the caller (NowPlayingSection only shows this
+                // card when state.airplayPaired is true).
+                if (!state.reconnecting) {
+                    Spacer(Modifier.width(8.dp))
+                    PuckRoundButton(
+                        onClick = vm::skipToPrevious,
+                        size = 44.dp,
+                        containerColor = c.raised,
+                        contentColor = scheme.onSurface,
+                    ) {
+                        Icon(Icons.Default.SkipPrevious, contentDescription = stringResource(R.string.skip_previous_track), modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    PuckRoundButton(
+                        onClick = vm::skipToNext,
+                        size = 44.dp,
+                        containerColor = c.raised,
+                        contentColor = scheme.onSurface,
+                    ) {
+                        Icon(Icons.Default.SkipNext, contentDescription = stringResource(R.string.skip_next_track), modifier = Modifier.size(20.dp))
+                    }
+                }
+            }
+
+            val elapsed = position
+            val duration = playing.position?.second
+            if (elapsed != null && duration != null) {
+                Spacer(Modifier.height(12.dp))
+                Scrubber(elapsed, duration) { vm.seekTo(it) }
+            }
+
+            // Transport stays available while paused: skipping about is as
+            // useful then as it is during playback. The play/pause button
+            // itself lives in the deck, so it is not repeated here.
+            val seekable = playing.playbackState in setOf(
+                PlaybackState.PLAYING, PlaybackState.PAUSED, PlaybackState.SEEKING,
+            )
+            if (seekable) {
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TransportButton(Icons.Default.Replay10, stringResource(R.string.skip_back), 30.dp) {
+                        vm.skip(-SKIP_SECONDS)
+                    }
+                    TransportButton(Icons.Default.Forward10, stringResource(R.string.skip_forward), 30.dp) {
+                        vm.skip(SKIP_SECONDS)
+                    }
+                }
+            }
+        }
+
+        // Progress bar along the bottom edge (DESIGN_SPEC.md §6.4).
+        val duration = playing.position?.second
+        if (duration != null && duration > 0) {
+            val fraction = ((position ?: 0.0) / duration).toFloat().coerceIn(0f, 1f)
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(3.dp)
+                    .background(scheme.outlineVariant),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(fraction)
+                        .background(scheme.tertiary),
+                )
             }
         }
     }
@@ -957,8 +1056,8 @@ private fun Scrubber(position: Double, duration: Double, onSeek: (Double) -> Uni
     val fraction = scrubbing ?: (position / duration).toFloat().coerceIn(0f, 1f)
     val shown = fraction * duration
 
-    val trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-    val fillColor = MaterialTheme.colorScheme.onSurface
+    val trackColor = MaterialTheme.colorScheme.outlineVariant
+    val fillColor = MaterialTheme.colorScheme.tertiary
 
     Column(Modifier.fillMaxWidth()) {
         Row(
@@ -967,12 +1066,12 @@ private fun Scrubber(position: Double, duration: Double, onSeek: (Double) -> Uni
         ) {
             Text(
                 formatTime(shown),
-                fontSize = 11.sp,
+                style = PuckText.data,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 "-${formatTime(duration - shown)}",
-                fontSize = 11.sp,
+                style = PuckText.data,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -1046,77 +1145,48 @@ private fun TransportButton(
 }
 
 @Composable
-private fun PillButton(
-    icon: ImageVector,
-    label: String,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    var pressed by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(if (pressed) 0.95f else 1f, label = "pillButtonScale")
-    Row(
-        modifier = modifier
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .shadow(elevation = if (pressed) 1.dp else 4.dp, shape = RoundedCornerShape(10.dp), clip = false)
-            .clip(RoundedCornerShape(10.dp))
-            .background(MaterialTheme.colorScheme.primaryContainer)
-            .repeatOnHold(onPressedChange = { pressed = it }, onStep = onClick)
-            .semantics {
-                role = Role.Button
-                onClick { onClick(); true }
-            }
-            .padding(vertical = 9.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            icon,
-            contentDescription = label,
-            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier.size(24.dp),
-        )
-    }
-}
-
-@Composable
 private fun EnableNowPlaying(
     device: dev.atvremote.protocol.discovery.AppleTvDevice,
     state: UiState,
     vm: RemoteViewModel,
 ) {
+    val scheme = MaterialTheme.colorScheme
+    val outline = scheme.outlineVariant
+    val shape = RoundedCornerShape(24.dp)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surface)
+            .height(56.dp)
+            .clip(shape)
+            .drawWithContent {
+                drawContent()
+                drawRoundRect(
+                    color = outline,
+                    cornerRadius = CornerRadius(24.dp.toPx()),
+                    style = Stroke(1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(8.dp.toPx(), 6.dp.toPx()))),
+                )
+            }
             .clickable(enabled = !state.busy) { vm.startAirPlayPairing(device) }
-            .padding(14.dp),
+            .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             Icons.Default.MusicNote,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(18.dp),
+            tint = scheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
         )
         Spacer(Modifier.width(10.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                stringResource(R.string.show_playing),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                stringResource(R.string.needs_second_pairing),
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        Text(
+            stringResource(R.string.show_playing),
+            style = PuckText.body.copy(fontWeight = FontWeight.Medium),
+            color = scheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
         Text(
             if (state.busy) "…" else stringResource(R.string.set_up),
-            fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.primary,
+            style = PuckText.body.copy(fontWeight = FontWeight.SemiBold),
+            color = scheme.primary,
         )
     }
 }

@@ -39,6 +39,9 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -156,7 +159,12 @@ fun Modifier.puckHintArc(
     )
 }
 
-/** A 60dp volume rocker pill: − / VOL / + as three independent buttons. */
+/**
+ * A 60dp volume rocker pill: − / VOL / + as three independent buttons. Each
+ * half repeats its step while held — [Modifier.repeatOnHold] (RemoteScreen.kt)
+ * is the same hold-to-repeat logic the old volume buttons used, not a plain
+ * click, so holding still steps continuously like the hardware remote.
+ */
 @Composable
 fun PuckVolumeRocker(
     onDown: () -> Unit,
@@ -181,16 +189,14 @@ fun PuckVolumeRocker(
 }
 
 @Composable
-private fun PuckRockerHalf(onClick: () -> Unit, modifier: Modifier, content: @Composable () -> Unit) {
-    val interaction = remember { MutableInteractionSource() }
+private fun PuckRockerHalf(onStep: () -> Unit, modifier: Modifier, content: @Composable () -> Unit) {
     Box(
         modifier
-            .clickable(
-                interactionSource = interaction,
-                indication = LocalIndication.current,
-                role = Role.Button,
-                onClick = onClick,
-            ),
+            .repeatOnHold(onStep = onStep)
+            .semantics {
+                role = Role.Button
+                onClick { onStep(); true }
+            },
         contentAlignment = Alignment.Center,
     ) {
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface, content = content)

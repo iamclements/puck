@@ -94,6 +94,8 @@
     <string name="volume_up">Volume up</string>
     <string name="skip_back">Back 10 seconds</string>
     <string name="skip_forward">Forward 10 seconds</string>
+    <string name="skip_previous_track">Previous track</string>
+    <string name="skip_next_track">Next track</string>
 
     <!-- Now playing -->
     <string name="nothing_playing">Nothing playing</string>
@@ -101,11 +103,11 @@
     <string name="state_stopped">Stopped</string>
     <string name="state_interrupted">Interrupted</string>
     <string name="show_playing">Show what\'s playing</string>
-    <string name="needs_second_pairing">Needs a second pairing code from the TV</string>
     <string name="set_up">Set up</string>
 
     <!-- Text entry -->
     <string name="type_on_tv">Type on the Apple TV</string>
+    <string name="keyboard_panel_label">%1$s IS ASKING FOR TEXT</string>
     <string name="send_text">Send text</string>
     <string name="clear_field">Clear field</string>
     <string name="checking_field">Checking for a focused field…</string>
