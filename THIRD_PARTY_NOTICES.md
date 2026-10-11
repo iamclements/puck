@@ -37,6 +37,22 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---
 
+## Bundled fonts
+
+Source: https://github.com/google/fonts (`ofl/` directory)
+
+Bundled in `app/src/main/res/font/` as variable TTFs so the app's type works
+fully offline on a LAN, with no download step. Full licence text for each is
+in `docs/fonts/`.
+
+| Font | File | Licence |
+|---|---|---|
+| Bricolage Grotesque | `bricolage_grotesque.ttf` | SIL Open Font License 1.1 |
+| Instrument Sans | `instrument_sans.ttf` | SIL Open Font License 1.1 |
+| JetBrains Mono | `jetbrains_mono.ttf` | SIL Open Font License 1.1 |
+
+---
+
 ## Runtime dependencies
 
 | Component | Licence |
