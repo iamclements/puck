@@ -2,7 +2,7 @@
 <resources>
     <!-- Widget label text: RemoteViews can't read Compose's dynamic color,
          so this mirrors PuckTheme's static light/dark fallback text color.
-         The icon tile itself is always the launcher icon's own charcoal,
-         regardless of system theme — see widget_icon_background. -->
+         The icon tile itself follows colors_widget.xml / values-v31's dynamic
+         variant instead, same as the in-app theme — see widget_tile_bg.xml. -->
     <color name="widget_on_background">#FF1A1A1C</color>
 </resources>

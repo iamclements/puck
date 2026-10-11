@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Deliberately styled to read as a normal app icon with a label underneath
-  (same charcoal/white as the launcher icon) rather than a themed card —
-  on most launchers a 1x1 widget sits in the grid indistinguishably from
-  any other icon, and a custom card shape stood out as obviously not one.
+  Still styled to read as a normal app icon with a label underneath, not a
+  themed card — on most launchers a 1x1 widget sits in the grid
+  indistinguishably from any other icon. Restyled per DESIGN_SPEC.md §9:
+  three stacked layers RemoteViews can render (<shape>, a vector, and
+  android:alpha — no gradients or shadows) — tile background, a faint ring,
+  the remote glyph.
 
   The icon fills whatever space the launcher actually hands the widget
   (weight="1", not a fixed dp size) — a fixed size assumes a cell close to
@@ -20,15 +22,27 @@
     android:gravity="center"
     android:padding="4dp">
 
-    <ImageView
-        android:id="@+id/widget_icon"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:background="@drawable/widget_icon_background"
-        android:scaleType="fitCenter"
-        android:src="@drawable/ic_launcher_foreground"
-        android:contentDescription="@null" />
+        android:background="@drawable/widget_tile_bg">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="9dp"
+            android:alpha="0.4"
+            android:src="@drawable/widget_ring"
+            android:importantForAccessibility="no" />
+
+        <ImageView
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_widget_remote"
+            android:importantForAccessibility="no" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/widget_label"

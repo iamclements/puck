@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- DESIGN_SPEC.md §9 — drawn at alpha 0.4 by the ImageView that uses it. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <stroke android:width="2dp" android:color="@color/puck_widget_glyph" />
+    <solid android:color="@android:color/transparent" />
+</shape>

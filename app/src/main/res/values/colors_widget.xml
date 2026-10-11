@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fallback (API < 31): primaryContainer / onPrimaryContainer of the charcoal/blue
+     palette (PuckFallbackDark in PuckTheme.kt) — DESIGN_SPEC.md §9. -->
+<resources>
+    <color name="puck_widget_tile">#FF284777</color>
+    <color name="puck_widget_glyph">#FFD6E3FF</color>
+</resources>

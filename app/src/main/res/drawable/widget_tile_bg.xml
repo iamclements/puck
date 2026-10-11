@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DESIGN_SPEC.md §9 — corner radius 28% of the tile (18dp at 64dp). Fallback
+  color is the app's own charcoal/blue primaryContainer; on API 31+
+  values-v31/colors_widget.xml points this at the dynamic wallpaper accent
+  instead, so the tile follows it the same way the app does.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="18dp" />
+    <solid android:color="@color/puck_widget_tile" />
+</shape>

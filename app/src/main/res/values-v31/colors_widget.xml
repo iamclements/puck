@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dynamic (API 31+): follows the wallpaper the same way the in-app dynamic
+     color scheme does — DESIGN_SPEC.md §9. -->
+<resources>
+    <color name="puck_widget_tile">@android:color/system_accent1_700</color>
+    <color name="puck_widget_glyph">@android:color/system_accent1_100</color>
+</resources>
