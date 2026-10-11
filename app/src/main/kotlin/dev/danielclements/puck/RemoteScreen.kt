@@ -46,8 +46,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Backspace
 import androidx.compose.material.icons.filled.MusicNote
@@ -58,8 +56,6 @@ import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.VolumeDown
 import androidx.compose.material.icons.filled.VolumeUp
@@ -102,6 +98,7 @@ import android.view.SoundEffectConstants
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -386,6 +383,13 @@ private fun VolumeRow(state: UiState, vm: RemoteViewModel) {
 /**
  * The Siri Remote's click pad as one surface, and the whole surface is live.
  *
+ * Styled to match the hardware remote's own glass clickpad as closely as a
+ * flat screen can: plain dark glass, no printed arrows or labels. The real
+ * pad carries no affordances either — its shape and the remote's physical
+ * feel are the only things that teach a direction tap from a press from a
+ * swipe, so this one leans on the same gesture logic to carry that meaning
+ * without needing glyphs to say it.
+ *
  * Gesture classification is positional:
  *  - a tap inside the centre circle selects; holding it is the long press
  *    that opens context menus
@@ -395,7 +399,6 @@ private fun VolumeRow(state: UiState, vm: RemoteViewModel) {
  *    Release) so momentum scrolling behaves like the hardware remote
  *
  * tvOS repeats a held direction itself, so rim holds send the direction once.
- * The chevrons and the centre circle are visual affordances only.
  */
 @Composable
 private fun TouchPad(
@@ -411,24 +414,30 @@ private fun TouchPad(
     onTouch: (x: Int, y: Int, phase: TouchPhase) -> Unit,
 ) {
     val feedback = rememberFeedback(hapticsEnabled, soundEnabled)
+    val touchPadDescription = stringResource(R.string.touchpad_description)
 
     BoxWithConstraints(
         modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
         val side = minOf(maxWidth, maxHeight)
-        val chevron = (side * 0.1f).coerceAtMost(34.dp)
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(side)
-                .clip(RoundedCornerShape(28.dp))
-                // surfaceVariant rather than surface: needs to read as a
-                // clearly bounded control against the page background, not
-                // blend into it — the whole card is the live touch surface,
-                // so its edges are the only cue that it's there at all.
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clip(RoundedCornerShape(percent = 35))
+                // Always this dark glass, regardless of the app's own
+                // light/dark theme — the hardware clickpad doesn't change
+                // color with the room either. The gradient is the only nod
+                // to it being glass rather than a flat swatch: a soft
+                // highlight toward the top-left, same as the glossy-plastic
+                // reflection in product photos of the real remote.
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(Color(0xFF3A3A3E), Color(0xFF050506)),
+                    ),
+                )
                 .pointerInput(Unit) {
                     val centre = 500f
                     // Frac is measured against a fixed reference pad — the size
@@ -589,57 +598,18 @@ private fun TouchPad(
                             }
                         }
                     }
+                }
+                .semantics {
+                    contentDescription = touchPadDescription
                 },
             contentAlignment = Alignment.Center,
         ) {
-            // Visual affordances only — the gesture handling above already
-            // treats the whole card as one live surface regardless of what's
-            // drawn here.
-            //
-            // Deliberately NOT a centre knob with cross-hair axes: that reads
-            // as an analogue joystick you drag around, which is the wrong
-            // mental model entirely. There is nothing analogue here — a rim
-            // tap is one discrete step, a rim hold repeats that one step
-            // (tvOS repeats the held HID key itself), and a drag anywhere
-            // is the only continuous motion, panning the real cursor the
-            // way a swipe on the hardware remote does. The arrows alone say
-            // "tap a quadrant for one step"; "OK" alone says "press here to
-            // select" — neither implies something you grab and move.
-            Icon(
-                Icons.Default.KeyboardArrowUp,
-                // Not independently focusable — the whole card is one custom
-                // gesture surface, not four discrete buttons — but TalkBack's
-                // touch exploration still reads this out as a finger passes
-                // over it, which is worth the real label.
-                contentDescription = stringResource(R.string.cd_up),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = side * 0.04f).size(chevron),
-            )
-            Icon(
-                Icons.Default.KeyboardArrowDown,
-                contentDescription = stringResource(R.string.cd_down),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = side * 0.04f).size(chevron),
-            )
-            Icon(
-                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                contentDescription = stringResource(R.string.cd_left),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
-                modifier = Modifier.align(Alignment.CenterStart).padding(start = side * 0.04f).size(chevron),
-            )
-            Icon(
-                Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = stringResource(R.string.cd_right),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
-                modifier = Modifier.align(Alignment.CenterEnd).padding(end = side * 0.04f).size(chevron),
-            )
-            Text(
-                stringResource(R.string.select),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 1.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
-            )
+            // Deliberately no printed arrows or "OK" — the hardware clickpad
+            // carries no labels either, and its shape and the gesture
+            // behaviour alone teach a tap from a hold from a swipe. Printed
+            // glyphs here would be the one thing this pad has that the real
+            // one doesn't. TalkBack still gets a description (below), just
+            // not a visible one.
         }
     }
 }

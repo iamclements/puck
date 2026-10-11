@@ -85,11 +85,7 @@
     <string name="volume_percent">Volume %1$d%%</string>
 
     <!-- Pad and transport -->
-    <string name="select">OK</string>
-    <string name="cd_up">Up</string>
-    <string name="cd_down">Down</string>
-    <string name="cd_left">Left</string>
-    <string name="cd_right">Right</string>
+    <string name="touchpad_description">Direction pad. Tap an edge to move one step, hold to repeat, tap the centre to select, hold the centre for more options, or drag anywhere to pan and scroll.</string>
     <string name="menu">Menu</string>
     <string name="play">Play</string>
     <string name="pause">Pause</string>
