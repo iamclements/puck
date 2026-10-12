@@ -50,6 +50,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.SettingsRemote
 import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material.icons.filled.VolumeMute
@@ -384,6 +387,8 @@ private fun PhoneRemoteContent(
             ) {
                 RemotePad(
                     style = state.settings.remoteStyle,
+                    showHint = !state.settings.padHintSeen,
+                    onDismissHint = vm::dismissPadHint,
                     modifier = Modifier.fillMaxSize(),
                     hapticsEnabled = state.settings.hapticsEnabled,
                     soundEnabled = state.settings.buttonSoundEnabled,
@@ -458,6 +463,8 @@ private fun LandscapeRemoteContent(
                     showApps -> AppGrid(state, vm, Modifier.fillMaxSize(), columns = 4)
                     !state.keyboardOpen -> RemotePad(
                         style = state.settings.remoteStyle,
+                        showHint = !state.settings.padHintSeen,
+                        onDismissHint = vm::dismissPadHint,
                         modifier = Modifier.fillMaxSize(),
                         hapticsEnabled = state.settings.hapticsEnabled,
                         soundEnabled = state.settings.buttonSoundEnabled,
@@ -513,6 +520,8 @@ private fun BookRemoteContent(
             Box(Modifier.weight(1f).fillMaxWidth()) {
                 RemotePad(
                     style = state.settings.remoteStyle,
+                    showHint = !state.settings.padHintSeen,
+                    onDismissHint = vm::dismissPadHint,
                     modifier = Modifier.fillMaxSize(),
                     hapticsEnabled = state.settings.hapticsEnabled,
                     soundEnabled = state.settings.buttonSoundEnabled,
@@ -580,6 +589,8 @@ private fun TabletopRemoteContent(
             Box(Modifier.weight(1f).fillMaxHeight()) {
                 RemotePad(
                     style = state.settings.remoteStyle,
+                    showHint = !state.settings.padHintSeen,
+                    onDismissHint = vm::dismissPadHint,
                     modifier = Modifier.fillMaxSize(),
                     hapticsEnabled = state.settings.hapticsEnabled,
                     soundEnabled = state.settings.buttonSoundEnabled,
@@ -688,25 +699,31 @@ private fun Deck(state: UiState, vm: RemoteViewModel) {
             }
         }
 
-        PuckVolumeRocker(
-            mute = {
-                Icon(
-                    if (state.muted) Icons.Default.VolumeOff else Icons.Default.VolumeMute,
-                    contentDescription = stringResource(if (state.muted) R.string.cd_unmute else R.string.cd_mute),
-                    tint = if (state.muted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp),
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SiriButton(onDown = { feedback(HapticFeedbackType.LongPress); vm.siriDown() }, onUp = { vm.siriUp() })
+            Spacer(Modifier.width(12.dp))
+            Box(Modifier.weight(1f)) {
+                PuckVolumeRocker(
+                    mute = {
+                        Icon(
+                            if (state.muted) Icons.Default.VolumeOff else Icons.Default.VolumeMute,
+                            contentDescription = stringResource(if (state.muted) R.string.cd_unmute else R.string.cd_mute),
+                            tint = if (state.muted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    },
+                    onMute = { feedback(HapticFeedbackType.LongPress); vm.toggleMute() },
+                    onDown = { feedback(HapticFeedbackType.LongPress); vm.volumeDown() },
+                    onUp = { feedback(HapticFeedbackType.LongPress); vm.volumeUp() },
+                    down = {
+                        Icon(Icons.Default.VolumeDown, contentDescription = stringResource(R.string.volume_down), modifier = Modifier.size(24.dp))
+                    },
+                    up = {
+                        Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.volume_up), modifier = Modifier.size(24.dp))
+                    },
                 )
-            },
-            onMute = { feedback(HapticFeedbackType.LongPress); vm.toggleMute() },
-            onDown = { feedback(HapticFeedbackType.LongPress); vm.volumeDown() },
-            onUp = { feedback(HapticFeedbackType.LongPress); vm.volumeUp() },
-            down = {
-                Icon(Icons.Default.VolumeDown, contentDescription = stringResource(R.string.volume_down), modifier = Modifier.size(24.dp))
-            },
-            up = {
-                Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.volume_up), modifier = Modifier.size(24.dp))
-            },
-        )
+            }
+        }
     }
 }
 
@@ -835,6 +852,36 @@ private fun NowPlayingHero(
 }
 
 /**
+ * Hold-to-talk Siri button: the button goes down when the finger does and up
+ * when it lifts, as on the hardware remote. Experimental: the Companion
+ * protocol exposes the button but how tvOS reacts has not been verified.
+ */
+@Composable
+private fun SiriButton(onDown: () -> Unit, onUp: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val description = stringResource(R.string.cd_siri)
+    Box(
+        Modifier
+            .size(60.dp)
+            .raised(CircleShape, Puck.colors.raised)
+            .pointerInput(Unit) {
+                detectTapGestures(onPress = {
+                    onDown()
+                    try { tryAwaitRelease() } finally { onUp() }
+                })
+            }
+            .semantics {
+                role = Role.Button
+                contentDescription = description
+                onClick { onDown(); onUp(); true }
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(Icons.Default.Mic, contentDescription = null, tint = scheme.onSurface, modifier = Modifier.size(24.dp))
+    }
+}
+
+/**
  * The deck turned sideways for Tabletop (DESIGN_SPEC.md §8, `FoldTabletop.dc.html`):
  * play/pause on top, back/home below it, then the volume rocker — the same
  * buttons as [Deck], stacked instead of in a row.
@@ -896,21 +943,27 @@ private fun TabletopDeck(state: UiState, vm: RemoteViewModel, modifier: Modifier
 
         Spacer(Modifier.weight(1f))
 
-        PuckVolumeRocker(
-            mute = {
-                Icon(
-                    if (state.muted) Icons.Default.VolumeOff else Icons.Default.VolumeMute,
-                    contentDescription = stringResource(if (state.muted) R.string.cd_unmute else R.string.cd_mute),
-                    tint = if (state.muted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp),
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SiriButton(onDown = { feedback(HapticFeedbackType.LongPress); vm.siriDown() }, onUp = { vm.siriUp() })
+            Spacer(Modifier.width(12.dp))
+            Box(Modifier.weight(1f)) {
+                PuckVolumeRocker(
+                    mute = {
+                        Icon(
+                            if (state.muted) Icons.Default.VolumeOff else Icons.Default.VolumeMute,
+                            contentDescription = stringResource(if (state.muted) R.string.cd_unmute else R.string.cd_mute),
+                            tint = if (state.muted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    },
+                    onMute = { feedback(HapticFeedbackType.LongPress); vm.toggleMute() },
+                    onDown = { feedback(HapticFeedbackType.LongPress); vm.volumeDown() },
+                    onUp = { feedback(HapticFeedbackType.LongPress); vm.volumeUp() },
+                    down = { Icon(Icons.Default.VolumeDown, contentDescription = stringResource(R.string.volume_down), modifier = Modifier.size(24.dp)) },
+                    up = { Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.volume_up), modifier = Modifier.size(24.dp)) },
                 )
-            },
-            onMute = { feedback(HapticFeedbackType.LongPress); vm.toggleMute() },
-            onDown = { feedback(HapticFeedbackType.LongPress); vm.volumeDown() },
-            onUp = { feedback(HapticFeedbackType.LongPress); vm.volumeUp() },
-            down = { Icon(Icons.Default.VolumeDown, contentDescription = stringResource(R.string.volume_down), modifier = Modifier.size(24.dp)) },
-            up = { Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.volume_up), modifier = Modifier.size(24.dp)) },
-        )
+            }
+        }
     }
 }
 
@@ -940,7 +993,11 @@ private val PAD_CORNER = 28.dp
 
 private const val ZONE_DIAMETER_FRACTION = 0.38f * 2f
 
-/** The main control surface: the trackpad, or a plain four-way D-pad, per the Remote style setting. */
+/**
+ * The main control surface: the trackpad, or a plain four-way D-pad, per the
+ * Remote style setting. Also owns the TalkBack custom actions (a screen
+ * reader cannot swipe a trackpad) and the first-run hint overlay.
+ */
 @Composable
 private fun RemotePad(
     style: RemoteStyle,
@@ -949,6 +1006,8 @@ private fun RemotePad(
     soundEnabled: Boolean = false,
     sensitivity: Float = 1f,
     connected: Boolean = true,
+    showHint: Boolean = false,
+    onDismissHint: () -> Unit = {},
     onDirectionDown: (Button) -> Unit,
     onDirectionUp: (Button) -> Unit,
     onSelect: () -> Unit,
@@ -956,15 +1015,63 @@ private fun RemotePad(
     onSelectUp: () -> Unit,
     onTouch: (x: Int, y: Int, phase: TouchPhase) -> Unit,
 ) {
-    when (style) {
-        RemoteStyle.TRACKPAD -> TouchPad(
-            modifier, hapticsEnabled, soundEnabled, sensitivity, connected,
-            onDirectionDown, onDirectionUp, onSelect, onSelectDown, onSelectUp, onTouch,
-        )
-        RemoteStyle.DPAD -> DPad(
-            modifier, hapticsEnabled, soundEnabled,
-            onDirectionDown, onDirectionUp, onSelectDown, onSelectUp,
-        )
+    val tap: (Button) -> Unit = { onDirectionDown(it); onDirectionUp(it) }
+    val actions = listOf(
+        CustomAccessibilityAction(stringResource(R.string.cd_dpad_up)) { tap(Button.UP); true },
+        CustomAccessibilityAction(stringResource(R.string.cd_dpad_down)) { tap(Button.DOWN); true },
+        CustomAccessibilityAction(stringResource(R.string.cd_dpad_left)) { tap(Button.LEFT); true },
+        CustomAccessibilityAction(stringResource(R.string.cd_dpad_right)) { tap(Button.RIGHT); true },
+        CustomAccessibilityAction(stringResource(R.string.cd_dpad_select)) { onSelectDown(); onSelectUp(); true },
+    )
+    Box(modifier) {
+        when (style) {
+            RemoteStyle.TRACKPAD -> TouchPad(
+                Modifier.fillMaxSize(), hapticsEnabled, soundEnabled, sensitivity, connected,
+                onDirectionDown, onDirectionUp, onSelect, onSelectDown, onSelectUp, onTouch, actions,
+            )
+            RemoteStyle.DPAD -> DPad(
+                Modifier.fillMaxSize(), hapticsEnabled, soundEnabled,
+                onDirectionDown, onDirectionUp, onSelectDown, onSelectUp, actions,
+            )
+        }
+        if (showHint) PadHint(style, onDismissHint)
+    }
+}
+
+/** One-time overlay explaining the pad; any tap dismisses it. */
+@Composable
+private fun PadHint(style: RemoteStyle, onDismiss: () -> Unit) {
+    val scheme = MaterialTheme.colorScheme
+    val lines = if (style == RemoteStyle.TRACKPAD) {
+        listOf(R.string.hint_trackpad_1, R.string.hint_trackpad_2, R.string.hint_trackpad_3)
+    } else {
+        listOf(R.string.hint_dpad_1, R.string.hint_dpad_2, R.string.hint_dpad_3)
+    }
+    Box(
+        Modifier
+            .fillMaxSize()
+            .clip(RoundedCornerShape(PAD_CORNER))
+            .background(Puck.colors.tray.copy(alpha = 0.96f))
+            .clickable(role = Role.Button, onClick = onDismiss),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(20.dp)) {
+            Text(stringResource(R.string.hint_title), style = PuckText.rowTitle, color = scheme.onSurface)
+            Spacer(Modifier.height(10.dp))
+            lines.forEach {
+                Text(stringResource(it), style = PuckText.body, color = scheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(4.dp))
+            }
+            Spacer(Modifier.height(12.dp))
+            Box(
+                Modifier
+                    .clip(CircleShape)
+                    .background(scheme.primaryContainer)
+                    .padding(horizontal = 22.dp, vertical = 10.dp),
+            ) {
+                Text(stringResource(R.string.hint_dismiss), style = PuckText.rowTitle, color = scheme.onPrimaryContainer)
+            }
+        }
     }
 }
 
@@ -982,6 +1089,7 @@ private fun DPad(
     onDirectionUp: (Button) -> Unit,
     onSelectDown: () -> Unit,
     onSelectUp: () -> Unit,
+    a11yActions: List<CustomAccessibilityAction>,
 ) {
     val feedback = rememberFeedback(hapticsEnabled, soundEnabled)
     val scheme = MaterialTheme.colorScheme
@@ -996,7 +1104,7 @@ private fun DPad(
         Box(
             Modifier
                 .size(side)
-                .semantics { contentDescription = description }
+                .semantics { contentDescription = description; customActions = a11yActions }
                 .pointerInput(Unit) {
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
@@ -1103,6 +1211,7 @@ private fun TouchPad(
     onSelectDown: () -> Unit,
     onSelectUp: () -> Unit,
     onTouch: (x: Int, y: Int, phase: TouchPhase) -> Unit,
+    a11yActions: List<CustomAccessibilityAction>,
 ) {
     val feedback = rememberFeedback(hapticsEnabled, soundEnabled)
     val touchPadDescription = stringResource(R.string.touchpad_description)
@@ -1306,6 +1415,7 @@ private fun TouchPad(
                 }
                 .semantics {
                     contentDescription = touchPadDescription
+                    customActions = a11yActions
                 },
             contentAlignment = Alignment.Center,
         ) {
@@ -1645,26 +1755,6 @@ private fun NowPlayingCard(state: UiState, playing: NowPlaying, vm: RemoteViewMo
                         vm.skip(SKIP_SECONDS)
                     }
                 }
-            }
-        }
-
-        // Progress bar along the bottom edge (DESIGN_SPEC.md §6.4).
-        val duration = playing.position?.second
-        if (duration != null && duration > 0) {
-            val fraction = ((position ?: 0.0) / duration).toFloat().coerceIn(0f, 1f)
-            Box(
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .height(3.dp)
-                    .background(scheme.outlineVariant),
-            ) {
-                Box(
-                    Modifier
-                        .fillMaxHeight()
-                        .fillMaxWidth(fraction)
-                        .background(scheme.tertiary),
-                )
             }
         }
     }

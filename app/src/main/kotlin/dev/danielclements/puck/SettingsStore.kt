@@ -21,6 +21,8 @@ data class AppSettings(
     val sensitivity: TouchSensitivity = TouchSensitivity.MEDIUM,
     val remoteStyle: RemoteStyle = RemoteStyle.TRACKPAD,
     val controlsSide: ControlsSide = ControlsSide.RIGHT,
+    /** The first-run "how the pad works" overlay has been dismissed. */
+    val padHintSeen: Boolean = false,
 )
 
 /** User-facing preferences, separate from [CredentialStore]'s per-device data. */
@@ -41,6 +43,7 @@ class SettingsStore(context: Context) {
         controlsSide = prefs.getString(KEY_CONTROLS_SIDE, null)
             ?.let { saved -> ControlsSide.entries.firstOrNull { it.name == saved } }
             ?: ControlsSide.RIGHT,
+        padHintSeen = prefs.getBoolean(KEY_PAD_HINT_SEEN, false),
     )
 
     fun setHaptics(enabled: Boolean) = prefs.edit().putBoolean(KEY_HAPTICS, enabled).apply()
@@ -53,6 +56,8 @@ class SettingsStore(context: Context) {
     fun setRemoteStyle(value: RemoteStyle) =
         prefs.edit().putString(KEY_REMOTE_STYLE, value.name).apply()
 
+    fun setPadHintSeen() = prefs.edit().putBoolean(KEY_PAD_HINT_SEEN, true).apply()
+
     fun setControlsSide(value: ControlsSide) =
         prefs.edit().putString(KEY_CONTROLS_SIDE, value.name).apply()
 
@@ -62,5 +67,6 @@ class SettingsStore(context: Context) {
         private const val KEY_SENSITIVITY = "sensitivity"
         private const val KEY_REMOTE_STYLE = "remote_style"
         private const val KEY_CONTROLS_SIDE = "controls_side"
+        private const val KEY_PAD_HINT_SEEN = "pad_hint_seen"
     }
 }

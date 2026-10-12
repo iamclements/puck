@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -117,6 +118,7 @@ fun PuckTrayIconButton(
             .size(size)
             .clip(CircleShape)
             .background(if (active) Puck.colors.raised else Color.Transparent)
+            .semantics(mergeDescendants = true) { selected = active }
             .clickable(
                 interactionSource = interaction,
                 indication = LocalIndication.current,
@@ -180,7 +182,7 @@ private fun PuckRockerHalf(
     Box(
         modifier
             .then(if (repeat) Modifier.repeatOnHold(onStep = onStep) else Modifier.clickable(onClick = onStep))
-            .semantics {
+            .semantics(mergeDescendants = true) {
                 role = Role.Button
                 onClick { onStep(); true }
             },

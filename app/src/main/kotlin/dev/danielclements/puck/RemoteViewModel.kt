@@ -20,6 +20,7 @@ import dev.atvremote.protocol.airplay.AirPlayConnection
 import dev.atvremote.protocol.mrp.NowPlaying
 import dev.atvremote.protocol.mrp.PlaybackState
 import dev.atvremote.protocol.discovery.AppleTvDevice
+import dev.atvremote.protocol.discovery.UnicastMdns
 import dev.atvremote.protocol.hap.HapException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -150,6 +151,9 @@ class RemoteViewModel(
     private val netScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private var remote: AppleTvRemote? = null
+
+    /** A built-in fake Apple TV: no network, nothing sent anywhere. */
+    private var demo = false
     private var currentDevice: AppleTvDevice? = null
     private var ap2: Ap2Session? = null
     private var airplayConnection: AirPlayConnection? = null
@@ -219,6 +223,8 @@ class RemoteViewModel(
      * the app leaves the screen.
      */
     private fun syncNotification(state: UiState) {
+        // The demo never posts a media notification or starts the service.
+        if (demo) return
         val device = (state.screen as? Screen.Remote)?.device
         if (device == null) {
             // A null snapshot is the service's cue to stop itself.
@@ -329,6 +335,11 @@ class RemoteViewModel(
     fun setRemoteStyle(value: RemoteStyle) {
         settingsStore.setRemoteStyle(value)
         _state.update { it.copy(settings = it.settings.copy(remoteStyle = value)) }
+    }
+
+    fun dismissPadHint() {
+        settingsStore.setPadHintSeen()
+        _state.update { it.copy(settings = it.settings.copy(padHintSeen = true)) }
     }
 
     fun setControlsSide(value: ControlsSide) {
@@ -800,6 +811,7 @@ class RemoteViewModel(
     }
 
     fun disconnect() {
+        demo = false
         netScope.launch {
             runCatching { remote?.close() }
             runCatching { ap2?.close() }
@@ -826,6 +838,7 @@ class RemoteViewModel(
      * reporting anything to the user.
      */
     private fun command(block: suspend AppleTvRemote.() -> Unit) {
+        if (demo) return
         netScope.launch {
             val r = remote
             try {
@@ -853,7 +866,9 @@ class RemoteViewModel(
         }
     }
 
-    fun press(button: Button) = command { press(button) }
+    fun press(button: Button) {
+        if (demo && button == Button.PLAY_PAUSE) toggleDemoPlayback() else command { press(button) }
+    }
 
     /** Press and hold, which tvOS treats as a separate gesture from a tap. */
     fun hold(button: Button) = command { press(button, holdMs = HOLD_MS) }
@@ -901,6 +916,10 @@ class RemoteViewModel(
     }
 
     /** Held select: down on the long-press timeout, up when the finger lifts. */
+    /** Siri is a hold-to-talk button: down while the finger is, up on release. */
+    fun siriDown() = command { buttonDown(Button.SIRI) }
+    fun siriUp() = command { buttonUp(Button.SIRI) }
+
     fun selectDown() = command { buttonDown(Button.SELECT) }
     fun selectUp() = command { buttonUp(Button.SELECT) }
 
@@ -1052,6 +1071,77 @@ class RemoteViewModel(
 
 
 
+
+    // ----------------------------------------------------------------- demo
+
+    /**
+     * Opens the remote screen against a fake Apple TV, so the app can be
+     * explored (or reviewed) with no TV on the network. Taps do nothing
+     * except what is purely local: play/pause, the scrubber and mute.
+     */
+    fun startDemo() {
+        demo = true
+        val device = AppleTvDevice("Demo Apple TV", "0.0.0.0", 0, "AppleTV14,1", "puck-demo")
+        val apps = listOf(
+            "TV" to "com.apple.TVWatchList", "App Store" to "com.apple.TVAppStore",
+            "Music" to "com.apple.TVMusic", "Photos" to "com.apple.TVPhotos",
+            "Settings" to "com.apple.TVSettings", "Podcasts" to "com.apple.podcasts",
+            "Search" to "com.apple.TVSearch", "Arcade" to "com.apple.Arcade",
+        ).map { AppInfo(it.first, it.second) }
+        val playing = NowPlaying(
+            title = "Demo Track", artist = "Puck", appName = "Music",
+            playbackState = PlaybackState.PLAYING, duration = 214.0, elapsedTime = 83.0,
+        )
+        _state.update {
+            it.copy(
+                screen = Screen.Remote(device),
+                apps = apps,
+                capabilities = MediaCapabilities(play = true, pause = true, nextTrack = true, previousTrack = true, volume = true),
+                volume = 0.5,
+                muted = false,
+                airplayPaired = true,
+                error = null,
+            ).withNowPlaying(playing)
+        }
+    }
+
+    private fun toggleDemoPlayback() = _state.update { s ->
+        val np = s.nowPlaying ?: return@update s
+        val nowPlaying = np.playbackState != PlaybackState.PLAYING
+        s.copy(
+            nowPlaying = np.copy(playbackState = if (nowPlaying) PlaybackState.PLAYING else PlaybackState.PAUSED),
+            playhead = s.positionNow(),
+            playheadAt = SystemClock.elapsedRealtime(),
+            playheadAdvancing = nowPlaying,
+        )
+    }
+
+    // ------------------------------------------------------- add by address
+
+    /**
+     * Adds an Apple TV by IP address or hostname, for networks where multicast
+     * discovery cannot see it. The TV is asked directly for its port, model
+     * and identifier (see [UnicastMdns]); on success it joins the list and the
+     * normal pair-or-connect flow starts.
+     */
+    fun addDeviceByAddress(input: String) {
+        val host = input.trim()
+        if (!UnicastMdns.isValidHost(host)) {
+            _state.update { it.copy(error = str(R.string.add_address_invalid)) }
+            return
+        }
+        _state.update { it.copy(busy = true, error = null) }
+        netScope.launch {
+            val device = runCatching { UnicastMdns.lookup(host) }.getOrNull()
+            _state.update { it.copy(busy = false) }
+            if (device == null) {
+                _state.update { it.copy(error = str(R.string.add_address_failed, host)) }
+                return@launch
+            }
+            onDeviceResolved(device)
+            select(store.applyDisplayName(device))
+        }
+    }
 
     fun loadApps() {
         val r = remote ?: return

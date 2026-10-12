@@ -57,7 +57,14 @@
     <string name="settings_section_devices">Devices</string>
     <string name="settings_manage_devices">Manage paired devices</string>
     <string name="settings_manage_devices_desc">%1$d paired · rename or forget</string>
-    <string name="settings_footer">Puck · open source</string>
+    <string name="settings_footer">Puck %1$s · open source</string>
+    <string name="settings_section_about">About</string>
+    <string name="settings_report">Report a problem</string>
+    <string name="settings_report_desc">Opens a pre-filled GitHub issue</string>
+    <string name="settings_privacy">Privacy policy</string>
+    <string name="settings_privacy_desc">What Puck stores and sends</string>
+    <string name="settings_source">Source code and licences</string>
+    <string name="settings_source_desc">Open source, Apache 2.0</string>
 
     <!-- Manage devices -->
     <string name="manage_devices_title">Manage devices</string>
@@ -100,6 +107,24 @@
     <string name="cd_disconnect">Disconnect</string>
     <string name="cd_keyboard">Keyboard</string>
     <string name="cd_apps">Apps</string>
+    <string name="add_address">Add by IP</string>
+    <string name="add_address_title">Add an Apple TV by address</string>
+    <string name="add_address_desc">Use this if Puck cannot find it automatically, for example on a guest network or another subnet. Find the address in Settings, Network on the Apple TV.</string>
+    <string name="add_address_hint">192.168.1.20</string>
+    <string name="add_address_confirm">Add</string>
+    <string name="add_address_cancel">Cancel</string>
+    <string name="add_address_invalid">That does not look like an IP address or hostname.</string>
+    <string name="add_address_failed">No Apple TV answered at %1$s. Check the address and that your phone is on the same network.</string>
+    <string name="try_demo">Try demo</string>
+    <string name="cd_siri">Siri. Press and hold to talk.</string>
+    <string name="hint_title">How the pad works</string>
+    <string name="hint_trackpad_1">Tap an edge to move one step</string>
+    <string name="hint_trackpad_2">Press the middle to select</string>
+    <string name="hint_trackpad_3">Swipe anywhere to scroll</string>
+    <string name="hint_dpad_1">Tap a direction to move one step</string>
+    <string name="hint_dpad_2">Hold a direction to keep going</string>
+    <string name="hint_dpad_3">Press OK to select</string>
+    <string name="hint_dismiss">Got it</string>
     <string name="cd_remote">Remote</string>
     <string name="cd_mute">Mute</string>
     <string name="cd_unmute">Unmute</string>

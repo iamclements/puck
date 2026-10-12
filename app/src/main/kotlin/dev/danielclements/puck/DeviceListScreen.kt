@@ -19,6 +19,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tv
@@ -43,6 +54,14 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 
 @Composable
 fun DeviceListScreen(state: UiState, vm: RemoteViewModel) {
+    var showAddDialog by remember { mutableStateOf(false) }
+    if (showAddDialog) {
+        AddAddressDialog(
+            onDismiss = { showAddDialog = false },
+            onAdd = { showAddDialog = false; vm.addDeviceByAddress(it) },
+        )
+    }
+
     val scheme = MaterialTheme.colorScheme
     val c = Puck.colors
 
@@ -168,7 +187,16 @@ fun DeviceListScreen(state: UiState, vm: RemoteViewModel) {
             }
         }
 
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(4.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            TextButton(onClick = { showAddDialog = true }, enabled = !state.busy) {
+                Text(stringResource(R.string.add_address), style = PuckText.rowTitle)
+            }
+            TextButton(onClick = { vm.startDemo() }, enabled = !state.busy) {
+                Text(stringResource(R.string.try_demo), style = PuckText.rowTitle)
+            }
+        }
+        Spacer(Modifier.height(2.dp))
         Text(
             stringResource(R.string.disclaimer),
             style = PuckText.caption,
@@ -342,4 +370,33 @@ private fun PuckSecondaryButton(
             content = content,
         )
     }
+}
+
+@Composable
+private fun AddAddressDialog(onDismiss: () -> Unit, onAdd: (String) -> Unit) {
+    var text by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.add_address_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.add_address_desc), style = PuckText.caption)
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    singleLine = true,
+                    placeholder = { Text(stringResource(R.string.add_address_hint)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { if (text.isNotBlank()) onAdd(text) }),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onAdd(text) }, enabled = text.isNotBlank()) {
+                Text(stringResource(R.string.add_address_confirm))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.add_address_cancel)) } },
+    )
 }

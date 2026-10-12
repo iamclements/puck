@@ -26,6 +26,9 @@ jobs:
       - name: Protocol conformance tests
         run: ./gradlew :protocol:test
 
+      - name: App unit tests
+        run: ./gradlew :app:testDebugUnitTest
+
       - name: Android Lint
         run: ./gradlew :app:lintDebug
 

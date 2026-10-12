@@ -15,6 +15,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.PrivacyTip
+import androidx.compose.ui.platform.LocalContext
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -47,6 +58,7 @@ fun SettingsScreen(state: UiState, vm: RemoteViewModel) {
         modifier = Modifier
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.systemBars)
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
             .padding(top = 14.dp, bottom = 22.dp),
     ) {
@@ -221,14 +233,84 @@ fun SettingsScreen(state: UiState, vm: RemoteViewModel) {
             }
         }
 
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(24.dp))
+        SectionLabel(stringResource(R.string.settings_section_about))
+        Spacer(Modifier.height(10.dp))
+        val context = LocalContext.current
+        fun open(url: String) {
+            runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(30.dp))
+                .background(c.tray)
+                .padding(6.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            LinkRow(
+                icon = Icons.Default.BugReport,
+                title = stringResource(R.string.settings_report),
+                subtitle = stringResource(R.string.settings_report_desc),
+            ) {
+                open(
+                    ReportProblem.url(
+                        appVersion = BuildConfig.VERSION_NAME,
+                        versionCode = BuildConfig.VERSION_CODE,
+                        androidRelease = Build.VERSION.RELEASE,
+                        sdk = Build.VERSION.SDK_INT,
+                        phoneModel = "${Build.MANUFACTURER} ${Build.MODEL}",
+                        tvModels = state.managedDevices.mapNotNull { it.model },
+                    ),
+                )
+            }
+            LinkRow(
+                icon = Icons.Default.PrivacyTip,
+                title = stringResource(R.string.settings_privacy),
+                subtitle = stringResource(R.string.settings_privacy_desc),
+            ) { open(ProjectLinks.PRIVACY) }
+            LinkRow(
+                icon = Icons.Default.Code,
+                title = stringResource(R.string.settings_source),
+                subtitle = stringResource(R.string.settings_source_desc),
+            ) { open(ProjectLinks.REPO) }
+        }
+
+        Spacer(Modifier.height(28.dp))
         Text(
-            stringResource(R.string.settings_footer),
+            stringResource(R.string.settings_footer, BuildConfig.VERSION_NAME),
             style = PuckText.caption,
             color = scheme.onSurfaceVariant,
             modifier = Modifier.fillMaxWidth(),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
+    }
+}
+
+@Composable
+private fun LinkRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    val scheme = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(Puck.colors.card)
+            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconTile(icon)
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = PuckText.rowTitle, color = scheme.onSurface)
+            Text(subtitle, style = PuckText.caption, color = scheme.onSurfaceVariant)
+        }
+        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, tint = scheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
     }
 }
 
