@@ -48,6 +48,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SettingsRemote
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeMute
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Backspace
@@ -191,6 +199,7 @@ private fun RemoteHeader(
     feedback: (HapticFeedbackType) -> Unit,
     appsActive: Boolean,
     onToggleApps: () -> Unit,
+    onShowRemote: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -240,6 +249,11 @@ private fun RemoteHeader(
         }
         Spacer(Modifier.width(8.dp))
         PuckActionTray {
+            // The remote itself is a tab alongside keyboard and apps, lit
+            // whenever neither of those is covering it.
+            PuckTrayIconButton(onClick = onShowRemote, active = !state.keyboardOpen && !appsActive) {
+                Icon(Icons.Default.SettingsRemote, contentDescription = stringResource(R.string.cd_remote), modifier = Modifier.size(20.dp))
+            }
             PuckTrayIconButton(onClick = { vm.toggleKeyboard() }, active = state.keyboardOpen) {
                 Icon(Icons.Default.Keyboard, contentDescription = stringResource(R.string.cd_keyboard), modifier = Modifier.size(20.dp))
             }
@@ -291,7 +305,15 @@ private fun PhoneRemoteContent(
     onToggleApps: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        RemoteHeader(device, state, vm, feedback, appsActive = showApps, onToggleApps = onToggleApps)
+        RemoteHeader(
+            device, state, vm, feedback,
+            appsActive = showApps,
+            onToggleApps = onToggleApps,
+            onShowRemote = {
+                if (state.keyboardOpen) vm.toggleKeyboard()
+                if (showApps) onToggleApps()
+            },
+        )
 
         state.error?.let { message ->
             Spacer(Modifier.height(8.dp))
@@ -340,7 +362,8 @@ private fun PhoneRemoteContent(
                     .animateContentSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                TouchPad(
+                RemotePad(
+                    style = state.settings.remoteStyle,
                     modifier = Modifier.fillMaxSize(),
                     hapticsEnabled = state.settings.hapticsEnabled,
                     soundEnabled = state.settings.buttonSoundEnabled,
@@ -389,10 +412,16 @@ private fun BookRemoteContent(
 ) {
     Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(40.dp)) {
         Column(Modifier.weight(1f)) {
-            RemoteHeader(device, state, vm, feedback, appsActive = true, onToggleApps = {})
+            RemoteHeader(
+                device, state, vm, feedback,
+                appsActive = false,
+                onToggleApps = {},
+                onShowRemote = { if (state.keyboardOpen) vm.toggleKeyboard() },
+            )
             Spacer(Modifier.height(14.dp))
             Box(Modifier.weight(1f).fillMaxWidth()) {
-                TouchPad(
+                RemotePad(
+                    style = state.settings.remoteStyle,
                     modifier = Modifier.fillMaxSize(),
                     hapticsEnabled = state.settings.hapticsEnabled,
                     soundEnabled = state.settings.buttonSoundEnabled,
@@ -436,7 +465,12 @@ private fun TabletopRemoteContent(
 ) {
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.weight(1f)) {
-            RemoteHeader(device, state, vm, feedback, appsActive = true, onToggleApps = {})
+            RemoteHeader(
+                device, state, vm, feedback,
+                appsActive = false,
+                onToggleApps = {},
+                onShowRemote = { if (state.keyboardOpen) vm.toggleKeyboard() },
+            )
             Spacer(Modifier.height(16.dp))
             NowPlayingHero(device, state, vm, artworkAspect = 1f, modifier = Modifier.weight(1f))
         }
@@ -448,7 +482,8 @@ private fun TabletopRemoteContent(
 
         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             Box(Modifier.weight(1f).fillMaxHeight()) {
-                TouchPad(
+                RemotePad(
+                    style = state.settings.remoteStyle,
                     modifier = Modifier.fillMaxSize(),
                     hapticsEnabled = state.settings.hapticsEnabled,
                     soundEnabled = state.settings.buttonSoundEnabled,
@@ -558,6 +593,17 @@ private fun Deck(state: UiState, vm: RemoteViewModel) {
         }
 
         PuckVolumeRocker(
+            mute = {
+                Icon(
+                    if (state.muted) Icons.Default.VolumeOff else Icons.Default.VolumeMute,
+                    contentDescription = stringResource(if (state.muted) R.string.cd_unmute else R.string.cd_mute),
+                    tint = if (state.muted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp),
+                )
+            },
+            onMute = if (state.capabilities?.volume == true && state.volume != null) {
+                { feedback(HapticFeedbackType.LongPress); vm.toggleMute() }
+            } else null,
             onDown = { feedback(HapticFeedbackType.LongPress); vm.volumeDown() },
             onUp = { feedback(HapticFeedbackType.LongPress); vm.volumeUp() },
             down = {
@@ -746,6 +792,17 @@ private fun TabletopDeck(state: UiState, vm: RemoteViewModel, modifier: Modifier
         Spacer(Modifier.weight(1f))
 
         PuckVolumeRocker(
+            mute = {
+                Icon(
+                    if (state.muted) Icons.Default.VolumeOff else Icons.Default.VolumeMute,
+                    contentDescription = stringResource(if (state.muted) R.string.cd_unmute else R.string.cd_mute),
+                    tint = if (state.muted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp),
+                )
+            },
+            onMute = if (state.capabilities?.volume == true && state.volume != null) {
+                { feedback(HapticFeedbackType.LongPress); vm.toggleMute() }
+            } else null,
             onDown = { feedback(HapticFeedbackType.LongPress); vm.volumeDown() },
             onUp = { feedback(HapticFeedbackType.LongPress); vm.volumeUp() },
             down = { Icon(Icons.Default.VolumeDown, contentDescription = stringResource(R.string.volume_down), modifier = Modifier.size(24.dp)) },
@@ -776,6 +833,156 @@ private fun TabletopDeck(state: UiState, vm: RemoteViewModel, modifier: Modifier
  */
 /** The real centre-vs-edge hit threshold, as a fraction of the pad's own diameter — see [TouchPad]'s gesture block. */
 private const val ZONE_DIAMETER_FRACTION = 0.38f * 2f
+
+/** The main control surface: the trackpad, or a plain four-way D-pad, per the Remote style setting. */
+@Composable
+private fun RemotePad(
+    style: RemoteStyle,
+    modifier: Modifier = Modifier,
+    hapticsEnabled: Boolean = true,
+    soundEnabled: Boolean = false,
+    sensitivity: Float = 1f,
+    connected: Boolean = true,
+    onDirectionDown: (Button) -> Unit,
+    onDirectionUp: (Button) -> Unit,
+    onSelect: () -> Unit,
+    onSelectDown: () -> Unit,
+    onSelectUp: () -> Unit,
+    onTouch: (x: Int, y: Int, phase: TouchPhase) -> Unit,
+) {
+    when (style) {
+        RemoteStyle.TRACKPAD -> TouchPad(
+            modifier, hapticsEnabled, soundEnabled, sensitivity, connected,
+            onDirectionDown, onDirectionUp, onSelect, onSelectDown, onSelectUp, onTouch,
+        )
+        RemoteStyle.DPAD -> DPad(
+            modifier, hapticsEnabled, soundEnabled,
+            onDirectionDown, onDirectionUp, onSelectDown, onSelectUp,
+        )
+    }
+}
+
+/**
+ * A ring split into four wedges around a centre OK disc, the way a physical
+ * remote's click ring is laid out. A press sends the button down and a
+ * release sends it up, so holding repeats exactly as the trackpad's hold does.
+ */
+@Composable
+private fun DPad(
+    modifier: Modifier,
+    hapticsEnabled: Boolean,
+    soundEnabled: Boolean,
+    onDirectionDown: (Button) -> Unit,
+    onDirectionUp: (Button) -> Unit,
+    onSelectDown: () -> Unit,
+    onSelectUp: () -> Unit,
+) {
+    val feedback = rememberFeedback(hapticsEnabled, soundEnabled)
+    val scheme = MaterialTheme.colorScheme
+    val c = Puck.colors
+    val description = stringResource(R.string.cd_dpad)
+    // null = nothing held; SELECT is the centre disc.
+    var held by remember { mutableStateOf<Button?>(null) }
+    val centreFraction = 0.5f
+
+    BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
+        val side = minOf(maxWidth, maxHeight)
+        Box(
+            Modifier
+                .size(side)
+                .semantics { contentDescription = description }
+                .pointerInput(Unit) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        down.consume()
+                        val centre = Offset(size.width / 2f, size.height / 2f)
+                        val radius = size.width / 2f
+                        val delta = down.position - centre
+                        val dist = delta.getDistance()
+                        if (dist > radius) return@awaitEachGesture
+                        val button = when {
+                            dist <= radius * centreFraction -> Button.SELECT
+                            kotlin.math.abs(delta.x) > kotlin.math.abs(delta.y) ->
+                                if (delta.x > 0) Button.RIGHT else Button.LEFT
+                            else -> if (delta.y > 0) Button.DOWN else Button.UP
+                        }
+                        held = button
+                        feedback(HapticFeedbackType.LongPress)
+                        if (button == Button.SELECT) onSelectDown() else onDirectionDown(button)
+                        try {
+                            do {
+                                val event = awaitPointerEvent()
+                                event.changes.forEach { it.consume() }
+                            } while (event.changes.any { it.pressed })
+                        } finally {
+                            held = null
+                            if (button == Button.SELECT) onSelectUp() else onDirectionUp(button)
+                        }
+                    }
+                },
+        ) {
+            Canvas(Modifier.fillMaxSize()) {
+                val r = size.width / 2f
+                val centre = Offset(r, r)
+                drawCircle(c.tray, radius = r, center = centre)
+                drawCircle(scheme.outlineVariant, radius = r - 0.5.dp.toPx(), center = centre, style = Stroke(1.dp.toPx()))
+                // Wedge highlight for the held direction.
+                val sweepStart = when (held) {
+                    Button.RIGHT -> -45f
+                    Button.DOWN -> 45f
+                    Button.LEFT -> 135f
+                    Button.UP -> 225f
+                    else -> null
+                }
+                if (sweepStart != null) {
+                    drawArc(
+                        scheme.primaryContainer, sweepStart, 90f, useCenter = true,
+                        topLeft = Offset.Zero, size = size,
+                    )
+                }
+                // Diagonal seams between the wedges.
+                val seam = scheme.outlineVariant
+                val d = r * 0.7071f
+                for ((sx, sy) in listOf(1 to 1, 1 to -1)) {
+                    drawLine(
+                        seam, Offset(r - sx * d, r - sy * d), Offset(r + sx * d, r + sy * d), 1.dp.toPx(),
+                    )
+                }
+                drawCircle(c.raised, radius = r * centreFraction, center = centre)
+                drawCircle(
+                    if (held == Button.SELECT) scheme.primaryContainer else Color.Transparent,
+                    radius = r * centreFraction, center = centre,
+                )
+                drawCircle(seam, radius = r * centreFraction, center = centre, style = Stroke(1.dp.toPx()))
+            }
+            // Chevrons sit mid-wedge, between the centre disc and the rim.
+            val arrowOffset = side * (1f + centreFraction) / 4f
+            val chevron = scheme.onSurface
+            listOf(
+                Triple(Icons.Default.KeyboardArrowUp, 0.dp to -arrowOffset, R.string.cd_dpad_up),
+                Triple(Icons.Default.KeyboardArrowDown, 0.dp to arrowOffset, R.string.cd_dpad_down),
+                Triple(Icons.Default.KeyboardArrowLeft, -arrowOffset to 0.dp, R.string.cd_dpad_left),
+                Triple(Icons.Default.KeyboardArrowRight, arrowOffset to 0.dp, R.string.cd_dpad_right),
+            ).forEach { (icon, offset, label) ->
+                Icon(
+                    icon,
+                    contentDescription = stringResource(label),
+                    tint = chevron,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .offset(offset.first, offset.second)
+                        .size(34.dp),
+                )
+            }
+            Text(
+                "OK",
+                style = PuckText.label,
+                color = scheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+    }
+}
 
 @Composable
 private fun TouchPad(

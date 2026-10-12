@@ -51,6 +51,9 @@ sealed interface Screen {
     data object ManageDevices : Screen
 }
 
+/** Muting is volume at zero, since the Companion HID channel has no mute key. */
+val UiState.muted: Boolean get() = volume != null && volume <= 0.001
+
 data class UiState(
     val screen: Screen = Screen.DeviceList,
     val devices: List<AppleTvDevice> = emptyList(),
@@ -193,6 +196,9 @@ class RemoteViewModel(
     }
 
     companion object {
+        private const val MUTED_AT = 0.001
+        private const val DEFAULT_UNMUTE_VOLUME = 0.3
+
         fun factory(app: Application, directKey: String?) = viewModelFactory {
             initializer { RemoteViewModel(app, directKey) }
         }
@@ -319,6 +325,11 @@ class RemoteViewModel(
     fun setSensitivity(value: TouchSensitivity) {
         settingsStore.setSensitivity(value)
         _state.update { it.copy(settings = it.settings.copy(sensitivity = value)) }
+    }
+
+    fun setRemoteStyle(value: RemoteStyle) {
+        settingsStore.setRemoteStyle(value)
+        _state.update { it.copy(settings = it.settings.copy(remoteStyle = value)) }
     }
 
     fun openManageDevices() {
@@ -947,6 +958,23 @@ class RemoteViewModel(
         refreshVolume()
     }
 
+    /** The level to restore on unmute; the Companion HID channel has no mute key. */
+    private var volumeBeforeMute: Double? = null
+
+    /**
+     * Mute is a client-side convention: drop the volume to zero and remember
+     * where it was, then put it back on the next tap.
+     */
+    fun toggleMute() {
+        val current = _state.value.volume ?: return
+        if (current > MUTED_AT) {
+            volumeBeforeMute = current
+            setVolume(0.0)
+        } else {
+            setVolume(volumeBeforeMute ?: DEFAULT_UNMUTE_VOLUME)
+        }
+    }
+
     /** Jump straight to a level, which is what the notification's slider does. */
     fun setVolume(level: Double) {
         val clamped = level.coerceIn(0.0, 1.0)
@@ -1011,6 +1039,7 @@ class RemoteViewModel(
             }
         }
     }
+
 
     fun loadApps() {
         val r = remote ?: return

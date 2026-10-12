@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -115,6 +116,7 @@ fun PuckTrayIconButton(
         Modifier
             .size(size)
             .clip(CircleShape)
+            .background(if (active) Puck.colors.raised else Color.Transparent)
             .clickable(
                 interactionSource = interaction,
                 indication = LocalIndication.current,
@@ -173,6 +175,9 @@ fun PuckVolumeRocker(
     onUp: () -> Unit,
     modifier: Modifier = Modifier,
     height: Dp = 60.dp,
+    /** When set, the centre of the rocker is a mute toggle instead of the "VOL" label. */
+    mute: (@Composable () -> Unit)? = null,
+    onMute: (() -> Unit)? = null,
     down: @Composable () -> Unit,
     up: @Composable () -> Unit,
 ) {
@@ -185,16 +190,25 @@ fun PuckVolumeRocker(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         PuckRockerHalf(onDown, Modifier.weight(1f).fillMaxHeight(), down)
-        Text("VOL", style = PuckText.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (mute != null && onMute != null) {
+            PuckRockerHalf(onMute, Modifier.width(64.dp).fillMaxHeight(), mute, repeat = false)
+        } else {
+            Text("VOL", style = PuckText.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         PuckRockerHalf(onUp, Modifier.weight(1f).fillMaxHeight(), up)
     }
 }
 
 @Composable
-private fun PuckRockerHalf(onStep: () -> Unit, modifier: Modifier, content: @Composable () -> Unit) {
+private fun PuckRockerHalf(
+    onStep: () -> Unit,
+    modifier: Modifier,
+    content: @Composable () -> Unit,
+    repeat: Boolean = true,
+) {
     Box(
         modifier
-            .repeatOnHold(onStep = onStep)
+            .then(if (repeat) Modifier.repeatOnHold(onStep = onStep) else Modifier.clickable(onClick = onStep))
             .semantics {
                 role = Role.Button
                 onClick { onStep(); true }
