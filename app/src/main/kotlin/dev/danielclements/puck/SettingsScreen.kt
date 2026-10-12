@@ -115,6 +115,7 @@ fun SettingsScreen(state: UiState, vm: RemoteViewModel) {
                     },
                 )
             }
+            if (state.settings.remoteStyle == RemoteStyle.TRACKPAD) {
             Spacer(Modifier.height(4.dp))
             Column(
                 modifier = Modifier
@@ -144,6 +145,7 @@ fun SettingsScreen(state: UiState, vm: RemoteViewModel) {
                         }
                     },
                 )
+            }
             }
         }
 

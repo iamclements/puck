@@ -64,11 +64,14 @@ fun computeLayoutMode(
         fold != null && fold.orientation == FoldingFeature.Orientation.VERTICAL && fold.isSeparating ->
             RemoteLayoutMode.BOOK
 
+        // A phone on its side is wide but only ~360-412dp tall: far too short
+        // for two panes, so it gets the compact landscape layout whatever its
+        // width. Tablets and unfolded foldables are taller than this.
+        landscape && heightDp < 480.dp -> RemoteLayoutMode.LANDSCAPE
+
         widthDp >= 840.dp -> RemoteLayoutMode.BOOK
 
         widthDp >= 600.dp && widthDp < 840.dp && (fold == null || !fold.isSeparating) -> RemoteLayoutMode.CENTERED
-
-        landscape -> RemoteLayoutMode.LANDSCAPE
 
         else -> RemoteLayoutMode.PHONE
     }

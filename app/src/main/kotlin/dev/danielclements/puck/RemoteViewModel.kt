@@ -51,9 +51,6 @@ sealed interface Screen {
     data object ManageDevices : Screen
 }
 
-/** Muting is volume at zero, since the Companion HID channel has no mute key. */
-val UiState.muted: Boolean get() = volume != null && volume <= 0.001
-
 data class UiState(
     val screen: Screen = Screen.DeviceList,
     val devices: List<AppleTvDevice> = emptyList(),
@@ -61,6 +58,8 @@ data class UiState(
     val busy: Boolean = false,
     val apps: List<AppInfo> = emptyList(),
     val volume: Double? = null,
+    /** Mute is tracked here, not read back: the TV's reported volume is unreliable. */
+    val muted: Boolean = false,
     /** Null until the device reports what it can actually control. */
     val capabilities: MediaCapabilities? = null,
     val keyboardOpen: Boolean = false,
@@ -691,6 +690,7 @@ class RemoteViewModel(
                         screen = Screen.Remote(device),
                         apps = emptyList(),
                         volume = null,
+                        muted = false,
                         airplayPaired = store.isAirPlayPaired(device.credentialKey),
                     ).withNowPlaying(null)
                 }
@@ -805,6 +805,7 @@ class RemoteViewModel(
                     screen = Screen.DeviceList,
                     apps = emptyList(),
                     volume = null,
+                        muted = false,
                 ).withNowPlaying(null)
             }
         }
@@ -949,11 +950,13 @@ class RemoteViewModel(
     fun onVolumeKey(up: Boolean) = if (up) volumeUp() else volumeDown()
 
     fun volumeUp() = command {
+        _state.update { it.copy(muted = false) }
         press(Button.VOLUME_UP)
         refreshVolume()
     }
 
     fun volumeDown() = command {
+        _state.update { it.copy(muted = false) }
         press(Button.VOLUME_DOWN)
         refreshVolume()
     }
@@ -966,11 +969,13 @@ class RemoteViewModel(
      * where it was, then put it back on the next tap.
      */
     fun toggleMute() {
-        val current = _state.value.volume ?: return
-        if (current > MUTED_AT) {
-            volumeBeforeMute = current
+        val s = _state.value
+        if (!s.muted) {
+            volumeBeforeMute = s.volume?.takeIf { it > MUTED_AT } ?: DEFAULT_UNMUTE_VOLUME
+            _state.update { it.copy(muted = true) }
             setVolume(0.0)
         } else {
+            _state.update { it.copy(muted = false) }
             setVolume(volumeBeforeMute ?: DEFAULT_UNMUTE_VOLUME)
         }
     }
@@ -1039,6 +1044,7 @@ class RemoteViewModel(
             }
         }
     }
+
 
 
     fun loadApps() {

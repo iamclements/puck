@@ -1,6 +1,7 @@
 package dev.danielclements.puck
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -163,29 +164,67 @@ fun RemoteScreen(device: AppleTvDevice, state: UiState, vm: RemoteViewModel) {
             .imePadding()
             .padding(horizontal = 20.dp, vertical = 12.dp),
     ) {
-        // Landscape puts the pad and the controls side by side; portrait stacks
-        // them, with the pad taking whatever height is left over.
-        val landscape = maxWidth > maxHeight
         val mode = computeLayoutMode(fold, maxWidth, maxHeight)
 
-        // The drawer is the landscape screen too (as is every multi-pane
-        // mode, which always shows an app grid), so its apps load for them.
-        val appsVisible = showApps || landscape || mode == RemoteLayoutMode.BOOK || mode == RemoteLayoutMode.TABLETOP
+        // Multi-pane modes always show an app grid, so their apps load up front.
+        val appsVisible = showApps || mode == RemoteLayoutMode.BOOK || mode == RemoteLayoutMode.TABLETOP
         LaunchedEffect(appsVisible) {
             if (appsVisible && state.apps.isEmpty()) vm.loadApps()
         }
 
-        when (mode) {
-            RemoteLayoutMode.BOOK -> BookRemoteContent(device, state, vm, feedback)
+        // Folding or unfolding swaps layouts with a short crossfade; all of
+        // the connection, pairing and now-playing state lives in the view
+        // model, so nothing reconnects when the posture changes.
+        Crossfade(targetState = mode, animationSpec = tween(250), label = "layoutMode") { current ->
+        when (current) {
+            RemoteLayoutMode.BOOK -> BookRemoteContent(device, state, vm, feedback, fold)
             RemoteLayoutMode.TABLETOP -> TabletopRemoteContent(device, state, vm, feedback, fold)
             RemoteLayoutMode.CENTERED -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Box(Modifier.widthIn(max = 520.dp).fillMaxHeight()) {
-                    PhoneRemoteContent(device, state, vm, feedback, showApps, landscape) { showApps = !showApps }
+                    PhoneRemoteContent(device, state, vm, feedback, showApps) { showApps = !showApps }
                 }
             }
-            RemoteLayoutMode.LANDSCAPE, RemoteLayoutMode.PHONE ->
-                PhoneRemoteContent(device, state, vm, feedback, showApps, landscape) { showApps = !showApps }
+            RemoteLayoutMode.LANDSCAPE ->
+                LandscapeRemoteContent(device, state, vm, feedback, showApps) { showApps = !showApps }
+            RemoteLayoutMode.PHONE ->
+                PhoneRemoteContent(device, state, vm, feedback, showApps) { showApps = !showApps }
         }
+        }
+    }
+}
+
+/**
+ * The Apple TV's name with its connection status: one line, ellipsised, so a
+ * long name can never push the status or the tab tray out of place.
+ */
+@Composable
+private fun DeviceHeading(device: AppleTvDevice, state: UiState, modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
+    val dotColor = if (state.reconnecting) scheme.onSurfaceVariant else scheme.primary
+    val status = stringResource(if (state.reconnecting) R.string.reconnecting else R.string.connected)
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier
+                .size(8.dp)
+                .then(
+                    if (!state.reconnecting) {
+                        Modifier.drawBehind { drawCircle(dotColor.copy(alpha = 0.2f), radius = size.width * 0.9f) }
+                    } else Modifier,
+                )
+                .clip(CircleShape)
+                .background(dotColor),
+        )
+        Spacer(Modifier.width(10.dp))
+        Text(
+            device.name,
+            style = PuckText.deviceTitle.copy(fontSize = 18.sp, lineHeight = 22.sp),
+            color = scheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(status, style = PuckText.caption, color = scheme.onSurfaceVariant, maxLines = 1)
     }
 }
 
@@ -201,6 +240,10 @@ private fun RemoteHeader(
     onToggleApps: () -> Unit,
     onShowRemote: () -> Unit,
     modifier: Modifier = Modifier,
+    /** The device name and status sit in the header itself when the width allows. */
+    heading: Boolean = false,
+    /** Two-pane layouts always show the app grid, so they have no Apps tab. */
+    appsTab: Boolean = true,
 ) {
     Row(
         modifier = modifier.height(52.dp),
@@ -219,32 +262,7 @@ private fun RemoteHeader(
             )
         }
         Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(device.name, style = PuckText.deviceTitle, color = MaterialTheme.colorScheme.onSurface)
-            Spacer(Modifier.height(4.dp))
-            // Not the volume: the Apple TV only knows a real level when it
-            // drives the audio itself, and behind HDMI-CEC or IR it reports a
-            // placeholder that never follows the TV.
-            val subtitle = if (state.reconnecting) stringResource(R.string.reconnecting) else stringResource(R.string.connected)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                val dotColor = if (state.reconnecting) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
-                Box(
-                    Modifier
-                        .size(8.dp)
-                        .then(
-                            if (!state.reconnecting) {
-                                Modifier.drawBehind {
-                                    drawCircle(dotColor.copy(alpha = 0.2f), radius = size.width * 0.9f)
-                                }
-                            } else Modifier,
-                        )
-                        .clip(CircleShape)
-                        .background(dotColor),
-                )
-                Spacer(Modifier.width(7.dp))
-                Text(subtitle, style = PuckText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
+        if (heading) DeviceHeading(device, state, Modifier.weight(1f)) else Spacer(Modifier.weight(1f))
         Spacer(Modifier.width(8.dp))
         PuckActionTray {
             // The remote itself is a tab alongside keyboard and apps, lit
@@ -255,7 +273,7 @@ private fun RemoteHeader(
             PuckTrayIconButton(onClick = { vm.toggleKeyboard() }, active = state.keyboardOpen) {
                 Icon(Icons.Default.Keyboard, contentDescription = stringResource(R.string.cd_keyboard), modifier = Modifier.size(20.dp))
             }
-            PuckTrayIconButton(onClick = onToggleApps, active = appsActive) {
+            if (appsTab) PuckTrayIconButton(onClick = onToggleApps, active = appsActive) {
                 Icon(Icons.Default.Apps, contentDescription = stringResource(R.string.cd_apps), modifier = Modifier.size(20.dp))
             }
             // A tap opens Control Centre, which is what the remote's own power
@@ -296,7 +314,6 @@ private fun PhoneRemoteContent(
     vm: RemoteViewModel,
     feedback: (HapticFeedbackType) -> Unit,
     showApps: Boolean,
-    landscape: Boolean,
     onToggleApps: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
@@ -309,6 +326,8 @@ private fun PhoneRemoteContent(
                 if (showApps) onToggleApps()
             },
         )
+        Spacer(Modifier.height(10.dp))
+        DeviceHeading(device, state, Modifier.fillMaxWidth().padding(horizontal = 6.dp))
 
         state.error?.let { message ->
             Spacer(Modifier.height(8.dp))
@@ -325,20 +344,17 @@ private fun PhoneRemoteContent(
         }
 
 
-        // The drawer owns this screen in two cases: opened explicitly, and
-        // landscape — on a big-but-short display the pad has no room to
-        // breathe, and a grid of launchable apps is the better use of the
-        // space. Nothing else: just the apps.
+        // The drawer owns this screen when opened from the Apps tab: just the apps.
         AnimatedVisibility(
-            visible = showApps || landscape,
+            visible = showApps,
             modifier = Modifier.weight(1f),
             enter = fadeIn() + expandVertically(expandFrom = Alignment.Bottom),
             exit = ExitTransition.None,
         ) {
-            AppGrid(state, vm, Modifier.fillMaxSize(), columns = if (landscape) 5 else 3)
+            AppGrid(state, vm, Modifier.fillMaxSize(), columns = 3)
         }
 
-        if (!(showApps || landscape)) {
+        if (!showApps) {
             // Every seam — above the card, around the pad, between the button
             // rows, and at the page edges — shares the leftover height
             // equally, while the pad region gets the lion's share so the
@@ -391,6 +407,67 @@ private fun PhoneRemoteContent(
 }
 
 /**
+ * Phone landscape: header on top; below it the Remote tab (the pad) or the
+ * Apps tab (the grid) on the left, and a vertical deck on the right so
+ * play/pause, back, home and volume are always in reach.
+ */
+@Composable
+private fun LandscapeRemoteContent(
+    device: AppleTvDevice,
+    state: UiState,
+    vm: RemoteViewModel,
+    feedback: (HapticFeedbackType) -> Unit,
+    showApps: Boolean,
+    onToggleApps: () -> Unit,
+) {
+    Column(Modifier.fillMaxSize()) {
+        RemoteHeader(
+            device, state, vm, feedback,
+            appsActive = showApps,
+            onToggleApps = onToggleApps,
+            onShowRemote = {
+                if (state.keyboardOpen) vm.toggleKeyboard()
+                if (showApps) onToggleApps()
+            },
+            heading = true,
+        )
+        state.error?.let { message ->
+            Spacer(Modifier.height(6.dp))
+            ErrorBanner(message) { vm.dismissError() }
+        }
+        AnimatedVisibility(visible = state.keyboardOpen) {
+            Column {
+                Spacer(Modifier.height(8.dp))
+                TextEntry(device, state, vm)
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Box(Modifier.weight(1f).fillMaxHeight()) {
+                when {
+                    showApps -> AppGrid(state, vm, Modifier.fillMaxSize(), columns = 4)
+                    !state.keyboardOpen -> RemotePad(
+                        style = state.settings.remoteStyle,
+                        modifier = Modifier.fillMaxSize(),
+                        hapticsEnabled = state.settings.hapticsEnabled,
+                        soundEnabled = state.settings.buttonSoundEnabled,
+                        sensitivity = state.settings.sensitivity.multiplier,
+                        connected = !state.reconnecting,
+                        onDirectionDown = { feedback(HapticFeedbackType.LongPress); vm.padDirectionDown(it) },
+                        onDirectionUp = { vm.padDirectionUp(it) },
+                        onSelect = { vm.press(Button.SELECT) },
+                        onSelectDown = { vm.selectDown() },
+                        onSelectUp = { vm.selectUp() },
+                        onTouch = { x, y, phase -> vm.touch(x, y, phase) },
+                    )
+                }
+            }
+            TabletopDeck(state, vm, Modifier.width(236.dp).fillMaxHeight())
+        }
+    }
+}
+
+/**
  * Unfolded / wide: left pane is the phone remote (header, pad, deck), right
  * pane a Now Playing hero plus a 3-column app grid (DESIGN_SPEC.md §8,
  * `FoldBook.dc.html`). Not verified on a physical or emulated foldable —
@@ -404,14 +481,22 @@ private fun BookRemoteContent(
     state: UiState,
     vm: RemoteViewModel,
     feedback: (HapticFeedbackType) -> Unit,
+    fold: androidx.window.layout.FoldingFeature?,
 ) {
-    Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(40.dp)) {
+    // The pane gap is at least the hinge's own width so nothing sits under
+    // it (DESIGN_SPEC.md §8), and never less than 40dp.
+    val hingeWidth = fold?.takeIf { it.isSeparating }?.bounds?.let {
+        with(androidx.compose.ui.platform.LocalDensity.current) { it.width().toDp() }
+    } ?: 0.dp
+    Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(maxOf(hingeWidth, 40.dp))) {
         Column(Modifier.weight(1f)) {
             RemoteHeader(
                 device, state, vm, feedback,
                 appsActive = false,
                 onToggleApps = {},
                 onShowRemote = { if (state.keyboardOpen) vm.toggleKeyboard() },
+                heading = true,
+                appsTab = false,
             )
             Spacer(Modifier.height(14.dp))
             Box(Modifier.weight(1f).fillMaxWidth()) {
@@ -435,7 +520,7 @@ private fun BookRemoteContent(
         }
 
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            NowPlayingHero(device, state, vm, artworkAspect = 16f / 9f)
+            NowPlayingHero(device, state, vm, artworkAspect = 16f / 9f, stacked = true)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(stringResource(R.string.apps_label), style = PuckText.label, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 6.dp))
                 AppGrid(state, vm, Modifier.weight(1f), columns = 3)
@@ -465,6 +550,8 @@ private fun TabletopRemoteContent(
                 appsActive = false,
                 onToggleApps = {},
                 onShowRemote = { if (state.keyboardOpen) vm.toggleKeyboard() },
+                heading = true,
+                appsTab = false,
             )
             Spacer(Modifier.height(16.dp))
             NowPlayingHero(device, state, vm, artworkAspect = 1f, modifier = Modifier.weight(1f))
@@ -596,9 +683,7 @@ private fun Deck(state: UiState, vm: RemoteViewModel) {
                     modifier = Modifier.size(22.dp),
                 )
             },
-            onMute = if (state.capabilities?.volume == true && state.volume != null) {
-                { feedback(HapticFeedbackType.LongPress); vm.toggleMute() }
-            } else null,
+            onMute = { feedback(HapticFeedbackType.LongPress); vm.toggleMute() },
             onDown = { feedback(HapticFeedbackType.LongPress); vm.volumeDown() },
             onUp = { feedback(HapticFeedbackType.LongPress); vm.volumeUp() },
             down = {
@@ -625,6 +710,7 @@ private fun NowPlayingHero(
     vm: RemoteViewModel,
     artworkAspect: Float,
     modifier: Modifier = Modifier,
+    stacked: Boolean = false,
 ) {
     val scheme = MaterialTheme.colorScheme
     val c = Puck.colors
@@ -651,18 +737,9 @@ private fun NowPlayingHero(
         }
     }
 
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(c.card)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    val art: @Composable (Modifier) -> Unit = { m ->
         Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .aspectRatio(artworkAspect)
+            modifier = m
                 .clip(RoundedCornerShape(16.dp))
                 .background(scheme.tertiaryContainer),
             contentAlignment = Alignment.Center,
@@ -678,10 +755,9 @@ private fun NowPlayingHero(
                 Icon(Icons.Default.MusicNote, contentDescription = null, tint = scheme.onTertiaryContainer)
             }
         }
-
-        Spacer(Modifier.width(16.dp))
-
-        Column(Modifier.weight(1f)) {
+    }
+    val info: @Composable (Modifier) -> Unit = { m ->
+        Column(m) {
             Text(
                 playing.title ?: stringResource(R.string.nothing_playing),
                 style = PuckText.screenTitle,
@@ -720,6 +796,26 @@ private fun NowPlayingHero(
                     }
                 }
             }
+        }
+    }
+    val cardModifier = modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(24.dp))
+        .background(c.card)
+        .padding(16.dp)
+    if (stacked) {
+        // Book: artwork over the details, so the card takes only the height
+        // it needs and leaves the rest of the pane to the app grid.
+        Column(cardModifier) {
+            art(Modifier.fillMaxWidth().aspectRatio(artworkAspect))
+            Spacer(Modifier.height(16.dp))
+            info(Modifier.fillMaxWidth())
+        }
+    } else {
+        Row(cardModifier, verticalAlignment = Alignment.CenterVertically) {
+            art(Modifier.fillMaxHeight().aspectRatio(artworkAspect))
+            Spacer(Modifier.width(16.dp))
+            info(Modifier.weight(1f))
         }
     }
 }
@@ -795,9 +891,7 @@ private fun TabletopDeck(state: UiState, vm: RemoteViewModel, modifier: Modifier
                     modifier = Modifier.size(22.dp),
                 )
             },
-            onMute = if (state.capabilities?.volume == true && state.volume != null) {
-                { feedback(HapticFeedbackType.LongPress); vm.toggleMute() }
-            } else null,
+            onMute = { feedback(HapticFeedbackType.LongPress); vm.toggleMute() },
             onDown = { feedback(HapticFeedbackType.LongPress); vm.volumeDown() },
             onUp = { feedback(HapticFeedbackType.LongPress); vm.volumeUp() },
             down = { Icon(Icons.Default.VolumeDown, contentDescription = stringResource(R.string.volume_down), modifier = Modifier.size(24.dp)) },

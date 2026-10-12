@@ -38,7 +38,7 @@
     <string name="settings_title">Settings</string>
     <string name="settings_section_control">Control</string>
     <string name="settings_haptics">Haptic feedback</string>
-    <string name="settings_haptics_desc">Buzz on each D-pad press and button tap</string>
+    <string name="settings_haptics_desc">Buzz on each press and button tap</string>
     <string name="settings_button_sound">Button sound</string>
     <string name="settings_button_sound_desc">Play a click sound on each button tap</string>
     <string name="settings_remote_style">Remote style</string>
