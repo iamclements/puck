@@ -77,6 +77,14 @@ android {
         buildConfig = true
     }
 
+    // AGP otherwise embeds a Google-encrypted blob of dependency metadata in
+    // every APK, which F-Droid's scanner rejects as an opaque binary. The
+    // Play bundle keeps its copy (Play uses it for its SDK-issue alerts).
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = true
+    }
+
     packaging {
         resources.excludes += setOf("META-INF/versions/9/OSGI-INF/MANIFEST.MF")
     }
