@@ -16,12 +16,12 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "dev.danielclements.puck"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "dev.danielclements.puck"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         // Restarted at 1: this is a distinct app/listing from upstream's
         // dev.atvremote.app, not an update to it.
         versionCode = 5
