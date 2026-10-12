@@ -27,6 +27,8 @@ private fun usage(): Nothing {
           apps <host> <port>              List installed apps
           launch <host> <port> <bundle>   Launch an app
           key <host> <port> <button>      Press a button (e.g. home, up, select, play_pause)
+          rawkey <host> <port> <code> [holdMs]   Press an arbitrary HID code (diagnostic)
+          rawmcc <host> <port> <code>     Send an arbitrary media-control code (diagnostic)
           volume <host> <port> [level]    Get volume, or set it to level (0.0-1.0)
           skip <host> <port> <seconds>    Seek relative (negative to rewind)
           text <host> <port> <text...>    Type into the focused text field
@@ -174,6 +176,18 @@ fun main(args: Array<String>): Unit = runBlocking {
                         }
                     remote.press(button)
                     println("Pressed ${button.name}")
+                }
+
+                "rawmcc" -> {
+                    if (args.size < 4) usage()
+                    println(remote.mediaControlRaw(args[3].toInt()))
+                }
+
+                "rawkey" -> {
+                    if (args.size < 4) usage()
+                    val code = args[3].toInt()
+                    remote.pressCode(code, args.getOrNull(4)?.toLongOrNull() ?: 0)
+                    println("Pressed raw code $code")
                 }
 
                 "text" -> {

@@ -243,6 +243,16 @@ class AppleTvRemote(
         hid(button, down = false)
     }
 
+    /**
+     * Press and release an arbitrary HID code. A diagnostic for finding out
+     * which codes a tvOS version understands beyond [Button]'s documented set.
+     */
+    suspend fun pressCode(code: Int, holdMs: Long = 0) {
+        client.request("_hidC", mapOf("_hBtS" to 1, "_hidC" to code))
+        if (holdMs > 0) delay(holdMs)
+        client.request("_hidC", mapOf("_hBtS" to 2, "_hidC" to code))
+    }
+
     private suspend fun hid(button: Button, down: Boolean) {
         client.request("_hidC", mapOf("_hBtS" to if (down) 1 else 2, "_hidC" to button.code))
     }
@@ -274,6 +284,9 @@ class AppleTvRemote(
 
     suspend fun mediaControl(command: MediaControl, args: Map<String, Any?> = emptyMap()) =
         client.request("_mcc", mapOf("_mcc" to command.code) + args)
+
+    /** Diagnostic: send an arbitrary media-control code and return the raw response. */
+    suspend fun mediaControlRaw(code: Int) = client.request("_mcc", mapOf("_mcc" to code))
 
     suspend fun play() = mediaControl(MediaControl.PLAY)
     suspend fun pause() = mediaControl(MediaControl.PAUSE)

@@ -35,11 +35,9 @@ talking straight to your Apple TV over the LAN.
 - **A trackpad that works like the real remote.** Tap an edge for one step,
   hold to repeat, press the middle to select, or swipe anywhere to pan and
   momentum-scroll. Prefer buttons? Switch to a classic D-pad in Settings.
-- **Back, Home, Play/Pause, Power, volume and mute** — the play button
+- **Back, Home, Play/Pause, Power and volume** — the play button
   reflects real playback state; power taps open Control Centre and holds wake
   a sleeping Apple TV, same as the hardware remote.
-- **Siri button** (experimental): press and hold the mic beside the volume
-  bar to talk, as on the hardware remote.
 - **Add by IP address** for networks where discovery cannot see the Apple TV
   (guest Wi-Fi, mesh, another subnet), and a **demo mode** to look around
   with no Apple TV at all.

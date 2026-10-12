@@ -282,18 +282,7 @@ private fun RemoteHeader(
         Spacer(Modifier.width(10.dp))
         DeviceTitle(device, state, Modifier.weight(1f))
         Spacer(Modifier.width(8.dp))
-        val siri = @Composable { flat: Boolean ->
-            SiriButton(
-                onDown = { feedback(HapticFeedbackType.LongPress); vm.siriDown() },
-                onUp = { vm.siriUp() },
-                flat = flat,
-            )
-        }
-        if (!tabsInHeader) {
-            siri(false)
-            Spacer(Modifier.width(8.dp))
-            PowerButton(vm, feedback)
-        } else PuckActionTray {
+        if (!tabsInHeader) PowerButton(vm, feedback) else PuckActionTray {
             // The remote itself is a tab alongside keyboard and apps, lit
             // whenever neither of those is covering it.
             PuckTrayIconButton(onClick = onShowRemote, active = !state.keyboardOpen && !appsActive) {
@@ -305,7 +294,6 @@ private fun RemoteHeader(
             if (appsTab) PuckTrayIconButton(onClick = onToggleApps, active = appsActive) {
                 Icon(Icons.Default.Apps, contentDescription = stringResource(R.string.cd_apps), modifier = Modifier.size(20.dp))
             }
-            siri(true)
             PowerButton(vm, feedback)
         }
     }
@@ -778,15 +766,6 @@ private fun Deck(state: UiState, vm: RemoteViewModel) {
         }
 
         PuckVolumeRocker(
-            mute = {
-                Icon(
-                    if (state.muted) Icons.Default.VolumeOff else Icons.Default.VolumeMute,
-                    contentDescription = stringResource(if (state.muted) R.string.cd_unmute else R.string.cd_mute),
-                    tint = if (state.muted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp),
-                )
-            },
-            onMute = { feedback(HapticFeedbackType.LongPress); vm.toggleMute() },
             onDown = { feedback(HapticFeedbackType.LongPress); vm.volumeDown() },
             onUp = { feedback(HapticFeedbackType.LongPress); vm.volumeUp() },
             down = {
@@ -924,36 +903,6 @@ private fun NowPlayingHero(
 }
 
 /**
- * Hold-to-talk Siri button: the button goes down when the finger does and up
- * when it lifts, as on the hardware remote. Experimental: the Companion
- * protocol exposes the button but how tvOS reacts has not been verified.
- */
-@Composable
-private fun SiriButton(onDown: () -> Unit, onUp: () -> Unit, size: Dp = 44.dp, flat: Boolean = false) {
-    val scheme = MaterialTheme.colorScheme
-    val description = stringResource(R.string.cd_siri)
-    Box(
-        Modifier
-            .size(size)
-            .then(if (flat) Modifier.clip(CircleShape) else Modifier.raised(CircleShape, Puck.colors.raised))
-            .pointerInput(Unit) {
-                detectTapGestures(onPress = {
-                    onDown()
-                    try { tryAwaitRelease() } finally { onUp() }
-                })
-            }
-            .semantics {
-                role = Role.Button
-                contentDescription = description
-                onClick { onDown(); onUp(); true }
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(Icons.Default.Mic, contentDescription = null, tint = if (flat) scheme.onSurfaceVariant else scheme.onSurface, modifier = Modifier.size(20.dp))
-    }
-}
-
-/**
  * The deck turned sideways for Tabletop (DESIGN_SPEC.md §8, `FoldTabletop.dc.html`):
  * play/pause on top, back/home below it, then the volume rocker — the same
  * buttons as [Deck], stacked instead of in a row.
@@ -1016,15 +965,6 @@ private fun TabletopDeck(state: UiState, vm: RemoteViewModel, modifier: Modifier
         Spacer(Modifier.weight(1f))
 
         PuckVolumeRocker(
-            mute = {
-                Icon(
-                    if (state.muted) Icons.Default.VolumeOff else Icons.Default.VolumeMute,
-                    contentDescription = stringResource(if (state.muted) R.string.cd_unmute else R.string.cd_mute),
-                    tint = if (state.muted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp),
-                )
-            },
-            onMute = { feedback(HapticFeedbackType.LongPress); vm.toggleMute() },
             onDown = { feedback(HapticFeedbackType.LongPress); vm.volumeDown() },
             onUp = { feedback(HapticFeedbackType.LongPress); vm.volumeUp() },
             down = { Icon(Icons.Default.VolumeDown, contentDescription = stringResource(R.string.volume_down), modifier = Modifier.size(24.dp)) },

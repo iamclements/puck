@@ -3,9 +3,8 @@ Puck is a fast, private remote for your Apple TV. It talks straight to the TV ov
 CONTROL
 • A glass trackpad: tap an edge to step, swipe anywhere to pan and scroll, press the middle to select. Prefer buttons? Switch to a classic D-pad in Settings.
 • Back, Home and Play/Pause, with the play button reflecting what is really playing.
-• Volume up and down, plus a mute toggle.
+• Volume up and down.
 • Power: tap for Control Centre, hold to wake a sleeping Apple TV.
-• A hold-to-talk Siri button (experimental).
 
 MORE THAN ONE APPLE TV
 • Finds every Apple TV on your network and keeps as many paired as you like. Switch rooms from one list.

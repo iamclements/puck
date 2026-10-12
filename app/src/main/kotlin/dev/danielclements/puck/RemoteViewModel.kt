@@ -59,8 +59,6 @@ data class UiState(
     val busy: Boolean = false,
     val apps: List<AppInfo> = emptyList(),
     val volume: Double? = null,
-    /** Mute is tracked here, not read back: the TV's reported volume is unreliable. */
-    val muted: Boolean = false,
     /** Null until the device reports what it can actually control. */
     val capabilities: MediaCapabilities? = null,
     val keyboardOpen: Boolean = false,
@@ -199,9 +197,6 @@ class RemoteViewModel(
     }
 
     companion object {
-        private const val MUTED_AT = 0.001
-        private const val DEFAULT_UNMUTE_VOLUME = 0.3
-
         fun factory(app: Application, directKey: String?) = viewModelFactory {
             initializer { RemoteViewModel(app, directKey) }
         }
@@ -706,7 +701,6 @@ class RemoteViewModel(
                         screen = Screen.Remote(device),
                         apps = emptyList(),
                         volume = null,
-                        muted = false,
                         airplayPaired = store.isAirPlayPaired(device.credentialKey),
                     ).withNowPlaying(null)
                 }
@@ -822,7 +816,6 @@ class RemoteViewModel(
                     screen = Screen.DeviceList,
                     apps = emptyList(),
                     volume = null,
-                        muted = false,
                 ).withNowPlaying(null)
             }
         }
@@ -916,10 +909,6 @@ class RemoteViewModel(
     }
 
     /** Held select: down on the long-press timeout, up when the finger lifts. */
-    /** Siri is a hold-to-talk button: down while the finger is, up on release. */
-    fun siriDown() = command { buttonDown(Button.SIRI) }
-    fun siriUp() = command { buttonUp(Button.SIRI) }
-
     fun selectDown() = command { buttonDown(Button.SELECT) }
     fun selectUp() = command { buttonUp(Button.SELECT) }
 
@@ -974,34 +963,13 @@ class RemoteViewModel(
     fun onVolumeKey(up: Boolean) = if (up) volumeUp() else volumeDown()
 
     fun volumeUp() = command {
-        _state.update { it.copy(muted = false) }
         press(Button.VOLUME_UP)
         refreshVolume()
     }
 
     fun volumeDown() = command {
-        _state.update { it.copy(muted = false) }
         press(Button.VOLUME_DOWN)
         refreshVolume()
-    }
-
-    /** The level to restore on unmute; the Companion HID channel has no mute key. */
-    private var volumeBeforeMute: Double? = null
-
-    /**
-     * Mute is a client-side convention: drop the volume to zero and remember
-     * where it was, then put it back on the next tap.
-     */
-    fun toggleMute() {
-        val s = _state.value
-        if (!s.muted) {
-            volumeBeforeMute = s.volume?.takeIf { it > MUTED_AT } ?: DEFAULT_UNMUTE_VOLUME
-            _state.update { it.copy(muted = true) }
-            setVolume(0.0)
-        } else {
-            _state.update { it.copy(muted = false) }
-            setVolume(volumeBeforeMute ?: DEFAULT_UNMUTE_VOLUME)
-        }
     }
 
     /** Jump straight to a level, which is what the notification's slider does. */
@@ -1098,7 +1066,6 @@ class RemoteViewModel(
                 apps = apps,
                 capabilities = MediaCapabilities(play = true, pause = true, nextTrack = true, previousTrack = true, volume = true),
                 volume = 0.5,
-                muted = false,
                 airplayPaired = true,
                 error = null,
             ).withNowPlaying(playing)

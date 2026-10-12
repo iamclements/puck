@@ -148,9 +148,6 @@ fun PuckVolumeRocker(
     onUp: () -> Unit,
     modifier: Modifier = Modifier,
     height: Dp = 60.dp,
-    /** When set, the centre of the rocker is a mute toggle instead of the "VOL" label. */
-    mute: (@Composable () -> Unit)? = null,
-    onMute: (() -> Unit)? = null,
     down: @Composable () -> Unit,
     up: @Composable () -> Unit,
 ) {
@@ -163,11 +160,7 @@ fun PuckVolumeRocker(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         PuckRockerHalf(onDown, Modifier.weight(1f).fillMaxHeight(), down)
-        if (mute != null && onMute != null) {
-            PuckRockerHalf(onMute, Modifier.width(64.dp).fillMaxHeight(), mute, repeat = false)
-        } else {
-            Text("VOL", style = PuckText.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        Text("VOL", style = PuckText.label, color = MaterialTheme.colorScheme.onSurfaceVariant)
         PuckRockerHalf(onUp, Modifier.weight(1f).fillMaxHeight(), up)
     }
 }
@@ -177,11 +170,10 @@ private fun PuckRockerHalf(
     onStep: () -> Unit,
     modifier: Modifier,
     content: @Composable () -> Unit,
-    repeat: Boolean = true,
 ) {
     Box(
         modifier
-            .then(if (repeat) Modifier.repeatOnHold(onStep = onStep) else Modifier.clickable(onClick = onStep))
+            .repeatOnHold(onStep = onStep)
             .semantics(mergeDescendants = true) {
                 role = Role.Button
                 onClick { onStep(); true }
