@@ -282,7 +282,18 @@ private fun RemoteHeader(
         Spacer(Modifier.width(10.dp))
         DeviceTitle(device, state, Modifier.weight(1f))
         Spacer(Modifier.width(8.dp))
-        if (!tabsInHeader) PowerButton(vm, feedback) else PuckActionTray {
+        val siri = @Composable { flat: Boolean ->
+            SiriButton(
+                onDown = { feedback(HapticFeedbackType.LongPress); vm.siriDown() },
+                onUp = { vm.siriUp() },
+                flat = flat,
+            )
+        }
+        if (!tabsInHeader) {
+            siri(false)
+            Spacer(Modifier.width(8.dp))
+            PowerButton(vm, feedback)
+        } else PuckActionTray {
             // The remote itself is a tab alongside keyboard and apps, lit
             // whenever neither of those is covering it.
             PuckTrayIconButton(onClick = onShowRemote, active = !state.keyboardOpen && !appsActive) {
@@ -294,6 +305,7 @@ private fun RemoteHeader(
             if (appsTab) PuckTrayIconButton(onClick = onToggleApps, active = appsActive) {
                 Icon(Icons.Default.Apps, contentDescription = stringResource(R.string.cd_apps), modifier = Modifier.size(20.dp))
             }
+            siri(true)
             PowerButton(vm, feedback)
         }
     }
@@ -765,31 +777,25 @@ private fun Deck(state: UiState, vm: RemoteViewModel) {
             }
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SiriButton(onDown = { feedback(HapticFeedbackType.LongPress); vm.siriDown() }, onUp = { vm.siriUp() })
-            Spacer(Modifier.width(12.dp))
-            Box(Modifier.weight(1f)) {
-                PuckVolumeRocker(
-                    mute = {
-                        Icon(
-                            if (state.muted) Icons.Default.VolumeOff else Icons.Default.VolumeMute,
-                            contentDescription = stringResource(if (state.muted) R.string.cd_unmute else R.string.cd_mute),
-                            tint = if (state.muted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp),
-                        )
-                    },
-                    onMute = { feedback(HapticFeedbackType.LongPress); vm.toggleMute() },
-                    onDown = { feedback(HapticFeedbackType.LongPress); vm.volumeDown() },
-                    onUp = { feedback(HapticFeedbackType.LongPress); vm.volumeUp() },
-                    down = {
-                        Icon(Icons.Default.VolumeDown, contentDescription = stringResource(R.string.volume_down), modifier = Modifier.size(24.dp))
-                    },
-                    up = {
-                        Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.volume_up), modifier = Modifier.size(24.dp))
-                    },
+        PuckVolumeRocker(
+            mute = {
+                Icon(
+                    if (state.muted) Icons.Default.VolumeOff else Icons.Default.VolumeMute,
+                    contentDescription = stringResource(if (state.muted) R.string.cd_unmute else R.string.cd_mute),
+                    tint = if (state.muted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp),
                 )
-            }
-        }
+            },
+            onMute = { feedback(HapticFeedbackType.LongPress); vm.toggleMute() },
+            onDown = { feedback(HapticFeedbackType.LongPress); vm.volumeDown() },
+            onUp = { feedback(HapticFeedbackType.LongPress); vm.volumeUp() },
+            down = {
+                Icon(Icons.Default.VolumeDown, contentDescription = stringResource(R.string.volume_down), modifier = Modifier.size(24.dp))
+            },
+            up = {
+                Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.volume_up), modifier = Modifier.size(24.dp))
+            },
+        )
     }
 }
 
@@ -923,13 +929,13 @@ private fun NowPlayingHero(
  * protocol exposes the button but how tvOS reacts has not been verified.
  */
 @Composable
-private fun SiriButton(onDown: () -> Unit, onUp: () -> Unit) {
+private fun SiriButton(onDown: () -> Unit, onUp: () -> Unit, size: Dp = 44.dp, flat: Boolean = false) {
     val scheme = MaterialTheme.colorScheme
     val description = stringResource(R.string.cd_siri)
     Box(
         Modifier
-            .size(60.dp)
-            .raised(CircleShape, Puck.colors.raised)
+            .size(size)
+            .then(if (flat) Modifier.clip(CircleShape) else Modifier.raised(CircleShape, Puck.colors.raised))
             .pointerInput(Unit) {
                 detectTapGestures(onPress = {
                     onDown()
@@ -943,7 +949,7 @@ private fun SiriButton(onDown: () -> Unit, onUp: () -> Unit) {
             },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(Icons.Default.Mic, contentDescription = null, tint = scheme.onSurface, modifier = Modifier.size(24.dp))
+        Icon(Icons.Default.Mic, contentDescription = null, tint = if (flat) scheme.onSurfaceVariant else scheme.onSurface, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -1009,27 +1015,21 @@ private fun TabletopDeck(state: UiState, vm: RemoteViewModel, modifier: Modifier
 
         Spacer(Modifier.weight(1f))
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SiriButton(onDown = { feedback(HapticFeedbackType.LongPress); vm.siriDown() }, onUp = { vm.siriUp() })
-            Spacer(Modifier.width(12.dp))
-            Box(Modifier.weight(1f)) {
-                PuckVolumeRocker(
-                    mute = {
-                        Icon(
-                            if (state.muted) Icons.Default.VolumeOff else Icons.Default.VolumeMute,
-                            contentDescription = stringResource(if (state.muted) R.string.cd_unmute else R.string.cd_mute),
-                            tint = if (state.muted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp),
-                        )
-                    },
-                    onMute = { feedback(HapticFeedbackType.LongPress); vm.toggleMute() },
-                    onDown = { feedback(HapticFeedbackType.LongPress); vm.volumeDown() },
-                    onUp = { feedback(HapticFeedbackType.LongPress); vm.volumeUp() },
-                    down = { Icon(Icons.Default.VolumeDown, contentDescription = stringResource(R.string.volume_down), modifier = Modifier.size(24.dp)) },
-                    up = { Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.volume_up), modifier = Modifier.size(24.dp)) },
+        PuckVolumeRocker(
+            mute = {
+                Icon(
+                    if (state.muted) Icons.Default.VolumeOff else Icons.Default.VolumeMute,
+                    contentDescription = stringResource(if (state.muted) R.string.cd_unmute else R.string.cd_mute),
+                    tint = if (state.muted) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp),
                 )
-            }
-        }
+            },
+            onMute = { feedback(HapticFeedbackType.LongPress); vm.toggleMute() },
+            onDown = { feedback(HapticFeedbackType.LongPress); vm.volumeDown() },
+            onUp = { feedback(HapticFeedbackType.LongPress); vm.volumeUp() },
+            down = { Icon(Icons.Default.VolumeDown, contentDescription = stringResource(R.string.volume_down), modifier = Modifier.size(24.dp)) },
+            up = { Icon(Icons.Default.VolumeUp, contentDescription = stringResource(R.string.volume_up), modifier = Modifier.size(24.dp)) },
+        )
     }
 }
 
