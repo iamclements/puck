@@ -135,35 +135,6 @@ fun PuckTrayIconButton(
 }
 
 /**
- * A short 2dp arc hugging a disc from just outside its edge — the power
- * button's quiet "holding does something different" hint (DESIGN_SPEC.md
- * §6.1). A drawing-only modifier: the button underneath keeps whatever
- * click/long-click handling it already has.
- */
-fun Modifier.puckHintArc(
-    color: Color,
-    startAngleDegrees: Float = 35f,
-    sweepAngleDegrees: Float = 90f,
-    inset: Dp = 3.dp,
-    strokeWidth: Dp = 2.dp,
-): Modifier = this.drawWithContent {
-    drawContent()
-    val insetPx = inset.toPx()
-    val strokePx = strokeWidth.toPx()
-    val topLeft = Offset(-insetPx, -insetPx)
-    val arcSize = Size(size.width + insetPx * 2, size.height + insetPx * 2)
-    drawArc(
-        color = color,
-        startAngle = startAngleDegrees,
-        sweepAngle = sweepAngleDegrees,
-        useCenter = false,
-        topLeft = topLeft,
-        size = arcSize,
-        style = Stroke(strokePx, cap = StrokeCap.Round),
-    )
-}
-
-/**
  * A 60dp volume rocker pill: − / VOL / + as three independent buttons. Each
  * half repeats its step while held — [Modifier.repeatOnHold] (RemoteScreen.kt)
  * is the same hold-to-repeat logic the old volume buttons used, not a plain

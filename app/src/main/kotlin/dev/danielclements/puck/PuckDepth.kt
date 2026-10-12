@@ -85,7 +85,6 @@ data class TrackpadVisualState(
     val touch: Offset?,              // current pointer, null when up
     val trail: List<Offset>,         // last ~120ms of positions
     val centerPressed: Boolean,
-    val zoneDiameterFraction: Float, // the real centre/edge hit threshold — see TouchPad
 )
 
 /** Draws the trackpad's "disc system" layers (DESIGN_SPEC.md §6.2), back to front. */
@@ -96,8 +95,6 @@ fun DrawScope.drawTrackpad(
     corner: Dp = 46.dp,
 ) {
     val r = CornerRadius(corner.toPx())
-    val minSide = minOf(size.width, size.height)
-    val ctr = center
     val primary = scheme.primary
     val ov = scheme.outlineVariant
 
@@ -105,32 +102,14 @@ fun DrawScope.drawTrackpad(
     drawRoundRect(c.well, cornerRadius = r)
     drawRoundRect(Brush.verticalGradient(0f to c.shade, 1f to Color.Transparent, endY = 14.dp.toPx()), cornerRadius = r)
 
-    // 2 live ring (the outer halo is drawn by the caller, outside this surface)
+    // 2 ring (the outer halo is drawn by the caller, outside this surface)
     val ringColor = if (s.connected) primary.copy(alpha = 0.45f * s.ringAlpha) else ov
     drawRoundRect(ringColor, cornerRadius = r, style = Stroke(1.5.dp.toPx()))
 
-    // 3 edge ticks — mark where a tap steps the focus, no arrows
-    val tick = if (s.connected) primary.copy(alpha = 0.6f) else ov
-    val inset = 12.dp.toPx(); val len = 30.dp.toPx(); val th = 4.dp.toPx()
-    val tr = CornerRadius(th / 2)
-    drawRoundRect(tick, Offset(ctr.x - len / 2, inset), Size(len, th), tr)
-    drawRoundRect(tick, Offset(ctr.x - len / 2, size.height - inset - th), Size(len, th), tr)
-    drawRoundRect(tick, Offset(inset, ctr.y - len / 2), Size(th, len), tr)
-    drawRoundRect(tick, Offset(size.width - inset - th, ctr.y - len / 2), Size(th, len), tr)
+    // 3 select feedback — the surface lifts a little while OK is held
+    if (s.centerPressed) drawRoundRect(c.raised.copy(alpha = 0.5f), cornerRadius = r)
 
-    // 4 zone line — diameter equals the real centre/edge threshold
-    drawCircle(ov.copy(alpha = 0.5f), radius = minSide * s.zoneDiameterFraction / 2, center = ctr, style = Stroke(1.dp.toPx()))
-
-    // 5 dimple — the select target
-    val dr = minSide * 0.15f
-    val dimpleTop = if (s.centerPressed) lerp(c.raised, c.well, 0.6f) else c.raised
-    drawCircle(
-        Brush.radialGradient(0f to dimpleTop, 0.72f to c.well, center = Offset(ctr.x, ctr.y - dr * 0.4f), radius = dr * 1.4f),
-        radius = dr, center = ctr,
-    )
-    drawArc(c.edge, 200f, 140f, false, Offset(ctr.x - dr, ctr.y - dr), Size(dr * 2, dr * 2), style = Stroke(1.dp.toPx()))
-
-    // 6 touch feedback — only while a pointer is down
+    // 4 touch feedback — only while a pointer is down
     if (s.trail.size > 1) {
         s.trail.zipWithNext().forEachIndexed { i, (a, b) ->
             val t = (i + 1f) / s.trail.size

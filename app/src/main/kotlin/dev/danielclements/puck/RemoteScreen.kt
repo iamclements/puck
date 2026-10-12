@@ -264,13 +264,10 @@ private fun RemoteHeader(
             // button does — sleeping outright, with no confirmation and no way
             // back, is not what pressing power on a remote means. Sleep lives
             // inside that panel; waking does not, since a sleeping TV has no
-            // panel to open, so it stays on the hold. The quiet arc is only a
-            // hint that holding it does something different — tap/hold itself
-            // is unchanged.
+            // panel to open, so it stays on the hold.
             Box(
                 Modifier
                     .size(44.dp)
-                    .puckHintArc(MaterialTheme.colorScheme.tertiary)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.tertiaryContainer)
                     .combinedClickable(
@@ -832,6 +829,9 @@ private fun TabletopDeck(state: UiState, vm: RemoteViewModel, modifier: Modifier
  * tvOS repeats a held direction itself, so rim holds send the direction once.
  */
 /** The real centre-vs-edge hit threshold, as a fraction of the pad's own diameter — see [TouchPad]'s gesture block. */
+/** A square-ish rounded rectangle, not a pill — the trackpad is plain glass. */
+private val PAD_CORNER = 28.dp
+
 private const val ZONE_DIAMETER_FRACTION = 0.38f * 2f
 
 /** The main control surface: the trackpad, or a plain four-way D-pad, per the Remote style setting. */
@@ -1026,10 +1026,10 @@ private fun TouchPad(
                 .fillMaxWidth()
                 .height(side)
                 .then(
-                    if (connected) Modifier.border(6.dp, haloColor, RoundedCornerShape(percent = 35))
+                    if (connected) Modifier.border(6.dp, haloColor, RoundedCornerShape(PAD_CORNER))
                     else Modifier,
                 )
-                .clip(RoundedCornerShape(percent = 35))
+                .clip(RoundedCornerShape(PAD_CORNER))
                 .pointerInput(Unit) {
                     val centre = 500f
                     // Frac is measured against a fixed reference pad — the size
@@ -1203,13 +1203,11 @@ private fun TouchPad(
                 },
             contentAlignment = Alignment.Center,
         ) {
-            // Deliberately no printed arrows or "OK" — the hardware clickpad
-            // carries no labels either, and its shape and the gesture
-            // behaviour alone teach a tap from a hold from a swipe. The
-            // "disc system" drawing layer below (well, live ring, edge
-            // ticks, zone line, dimple, touch feedback) is purely tonal —
-            // see PuckDepth.kt's drawTrackpad(). TalkBack still gets a
-            // description (above), just not a visible one.
+            // A plain glass surface, like the hardware clickpad: no printed
+            // arrows, markers or centre target — the gestures alone (tap an
+            // edge, press the middle, swipe anywhere) are the interface.
+            // Only touch feedback is drawn; see PuckDepth.kt's drawTrackpad().
+            // TalkBack still gets a description (above), just not a visible one.
             Canvas(Modifier.fillMaxSize()) {
                 drawTrackpad(
                     s = TrackpadVisualState(
@@ -1218,11 +1216,10 @@ private fun TouchPad(
                         touch = touchPoint,
                         trail = touchTrail,
                         centerPressed = centerPressed,
-                        zoneDiameterFraction = ZONE_DIAMETER_FRACTION,
                     ),
                     scheme = scheme,
                     c = puckColors,
-                    corner = side * 0.35f,
+                    corner = PAD_CORNER,
                 )
             }
         }
