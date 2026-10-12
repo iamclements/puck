@@ -1,0 +1,1 @@
+Fixes the Now Playing position after reconnecting mid-show, and removes the mute and Siri buttons, which the Apple TV protocol cannot support.
