@@ -331,6 +331,11 @@ class RemoteViewModel(
         _state.update { it.copy(settings = it.settings.copy(remoteStyle = value)) }
     }
 
+    fun setControlsSide(value: ControlsSide) {
+        settingsStore.setControlsSide(value)
+        _state.update { it.copy(settings = it.settings.copy(controlsSide = value)) }
+    }
+
     fun openManageDevices() {
         refreshManagedDevices()
         _state.update { it.copy(screen = Screen.ManageDevices) }
@@ -1044,6 +1049,7 @@ class RemoteViewModel(
             }
         }
     }
+
 
 
 

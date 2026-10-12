@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.Gamepad
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.Icon
@@ -111,6 +112,35 @@ fun SettingsScreen(state: UiState, vm: RemoteViewModel) {
                         when (style) {
                             RemoteStyle.TRACKPAD -> stringResource(R.string.settings_remote_style_trackpad)
                             RemoteStyle.DPAD -> stringResource(R.string.settings_remote_style_dpad)
+                        }
+                    },
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(c.card)
+                    .padding(14.dp, 14.dp, 14.dp, 12.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconTile(Icons.Default.SwapHoriz)
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.settings_controls_side), style = PuckText.rowTitle, color = scheme.onSurface)
+                        Text(stringResource(R.string.settings_controls_side_desc), style = PuckText.caption, color = scheme.onSurfaceVariant)
+                    }
+                }
+                Spacer(Modifier.height(14.dp))
+                PuckSegmentedPicker(
+                    options = ControlsSide.entries.toList(),
+                    selected = state.settings.controlsSide,
+                    onSelect = vm::setControlsSide,
+                    label = { side ->
+                        when (side) {
+                            ControlsSide.LEFT -> stringResource(R.string.settings_controls_side_left)
+                            ControlsSide.RIGHT -> stringResource(R.string.settings_controls_side_right)
                         }
                     },
                 )

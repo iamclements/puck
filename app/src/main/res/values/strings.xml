@@ -45,6 +45,10 @@
     <string name="settings_remote_style_desc">What the main control surface is</string>
     <string name="settings_remote_style_trackpad">Trackpad</string>
     <string name="settings_remote_style_dpad">D-pad</string>
+    <string name="settings_controls_side">Controls side</string>
+    <string name="settings_controls_side_desc">Where the remote sits on wide screens and in landscape</string>
+    <string name="settings_controls_side_left">Left</string>
+    <string name="settings_controls_side_right">Right</string>
     <string name="settings_sensitivity">Touchpad sensitivity</string>
     <string name="settings_sensitivity_desc">How far a swipe moves the focus</string>
     <string name="settings_sensitivity_low">Low</string>
