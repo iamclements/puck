@@ -108,7 +108,6 @@
     <string name="cd_power">Control Centre, or hold to wake</string>
     <string name="connected">Connected</string>
     <string name="reconnecting">Reconnecting…</string>
-    <string name="volume_percent">Volume %1$d%%</string>
 
     <!-- Pad and transport -->
     <string name="touchpad_description">Direction pad. Tap an edge to move one step, hold to repeat, tap the centre to select, hold the centre for more options, or drag anywhere to pan and scroll.</string>

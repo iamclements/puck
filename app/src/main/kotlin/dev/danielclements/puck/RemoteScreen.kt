@@ -222,12 +222,10 @@ private fun RemoteHeader(
         Column(Modifier.weight(1f)) {
             Text(device.name, style = PuckText.deviceTitle, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(4.dp))
-            val subtitle = when {
-                state.reconnecting -> stringResource(R.string.reconnecting)
-                state.capabilities?.volume == true && state.volume != null ->
-                    stringResource(R.string.volume_percent, (state.volume * 100).toInt())
-                else -> stringResource(R.string.connected)
-            }
+            // Not the volume: the Apple TV only knows a real level when it
+            // drives the audio itself, and behind HDMI-CEC or IR it reports a
+            // placeholder that never follows the TV.
+            val subtitle = if (state.reconnecting) stringResource(R.string.reconnecting) else stringResource(R.string.connected)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val dotColor = if (state.reconnecting) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
                 Box(
