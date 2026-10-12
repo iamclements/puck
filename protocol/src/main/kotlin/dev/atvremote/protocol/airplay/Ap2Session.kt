@@ -264,8 +264,19 @@ class Ap2Session(
 
         // A value that cannot be a playhead is dropped: live streams report no
         // duration, and a stale elapsed time would draw a scrubber that lies.
-        val elapsed = metadata.double(Mrp.META_ELAPSED)
+        val snapshot = metadata.double(Mrp.META_ELAPSED)
             ?.takeIf { it.isFinite() && it >= 0 && (duration == null || it <= duration) }
+        // The device reports the playhead as of some earlier moment (often the
+        // start of the item, when it connects mid-show), so move it forward by
+        // the time since, if playing.
+        val playing = updated.playbackState == PlaybackState.PLAYING
+        val rate = metadata.double(Mrp.META_PLAYBACK_RATE)?.takeIf { it.isFinite() } ?: if (playing) 1.0 else 0.0
+        val elapsed = snapshot?.let {
+            Mrp.extrapolateElapsed(
+                it, metadata.double(Mrp.META_ELAPSED_TIMESTAMP), rate, duration,
+                System.currentTimeMillis() / 1000.0,
+            )
+        }
         Log.d { "content item $metadata elapsed=$elapsed duration=$duration" }
 
         return updated.copy(

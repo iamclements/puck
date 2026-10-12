@@ -69,6 +69,36 @@ object Mrp {
     // ContentItemMetadata rather than inferring.
     const val META_ELAPSED = 35
     const val META_DURATION = 14
+    // The playhead is a snapshot: elapsedTime was true at elapsedTimeTimestamp,
+    // and has advanced by playbackRate seconds per second since.
+    const val META_PLAYBACK_RATE = 39
+    const val META_ELAPSED_TIMESTAMP = 74
+
+    private const val COCOA_EPOCH_OFFSET = 978_307_200.0
+    private const val MAX_SNAPSHOT_AGE = 12 * 3600.0
+
+    /**
+     * Where the playhead is *now*, given a snapshot taken [timestamp].
+     *
+     * Apple counts timestamps from 2001-01-01 (CFAbsoluteTime), but a value
+     * that is already Unix-based is tolerated (the two differ by ~1.2e9, which
+     * is unmistakable). A snapshot from the future, or more than twelve hours
+     * old, is distrusted and returned unchanged rather than guessed at.
+     */
+    fun extrapolateElapsed(
+        elapsed: Double,
+        timestamp: Double?,
+        rate: Double,
+        duration: Double?,
+        nowUnixSeconds: Double,
+    ): Double {
+        if (timestamp == null || !timestamp.isFinite() || rate <= 0.0) return elapsed
+        val unixTimestamp = if (timestamp > 1.2e9) timestamp else timestamp + COCOA_EPOCH_OFFSET
+        val age = nowUnixSeconds - unixTimestamp
+        if (!age.isFinite() || age <= 0.0 || age > MAX_SNAPSHOT_AGE) return elapsed
+        val advanced = elapsed + age * rate
+        return if (duration != null && duration > 0) advanced.coerceAtMost(duration) else advanced
+    }
 
     /**
      * DEVICE_INFO must be the very first message sent; the device stays silent
