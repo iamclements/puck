@@ -120,6 +120,7 @@ import android.view.SoundEffectConstants
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
@@ -259,6 +260,8 @@ private fun RemoteHeader(
     modifier: Modifier = Modifier,
     /** Two-pane layouts always show the app grid, so they have no Apps tab. */
     appsTab: Boolean = true,
+    /** Portrait phones move the tabs to a bottom bar and keep only power here. */
+    tabsInHeader: Boolean = true,
 ) {
     Row(
         modifier = modifier.height(52.dp),
@@ -278,7 +281,8 @@ private fun RemoteHeader(
         }
         Spacer(Modifier.width(10.dp))
         DeviceTitle(device, state, Modifier.weight(1f))
-        PuckActionTray {
+        Spacer(Modifier.width(8.dp))
+        if (!tabsInHeader) PowerButton(vm, feedback) else PuckActionTray {
             // The remote itself is a tab alongside keyboard and apps, lit
             // whenever neither of those is covering it.
             PuckTrayIconButton(onClick = onShowRemote, active = !state.keyboardOpen && !appsActive) {
@@ -290,33 +294,90 @@ private fun RemoteHeader(
             if (appsTab) PuckTrayIconButton(onClick = onToggleApps, active = appsActive) {
                 Icon(Icons.Default.Apps, contentDescription = stringResource(R.string.cd_apps), modifier = Modifier.size(20.dp))
             }
-            // A tap opens Control Centre, which is what the remote's own power
-            // button does — sleeping outright, with no confirmation and no way
-            // back, is not what pressing power on a remote means. Sleep lives
-            // inside that panel; waking does not, since a sleeping TV has no
-            // panel to open, so it stays on the hold.
-            Box(
-                Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.tertiaryContainer)
-                    .combinedClickable(
-                        onClick = { vm.holdHome() },
-                        onLongClick = {
-                            feedback(HapticFeedbackType.LongPress)
-                            vm.wake()
-                        },
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Default.PowerSettingsNew,
-                    contentDescription = stringResource(R.string.cd_power),
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = Modifier.size(19.dp),
-                )
-            }
+            PowerButton(vm, feedback)
         }
+    }
+}
+
+/**
+ * A tap opens Control Centre, which is what the remote's own power
+ * button does — sleeping outright, with no confirmation and no way
+ * back, is not what pressing power on a remote means. Sleep lives
+ * inside that panel; waking does not, since a sleeping TV has no
+ * panel to open, so it stays on the hold.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun PowerButton(vm: RemoteViewModel, feedback: (HapticFeedbackType) -> Unit) {
+    Box(
+        Modifier
+            .size(44.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.tertiaryContainer)
+            .combinedClickable(
+                onClick = { vm.holdHome() },
+                onLongClick = {
+                    feedback(HapticFeedbackType.LongPress)
+                    vm.wake()
+                },
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            Icons.Default.PowerSettingsNew,
+            contentDescription = stringResource(R.string.cd_power),
+            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier = Modifier.size(19.dp),
+        )
+    }
+}
+
+/**
+ * Portrait phones keep the Remote / Keyboard / Apps tabs along the bottom, in
+ * thumb reach, which leaves the whole header to the device name.
+ */
+@Composable
+private fun BottomTabs(
+    state: UiState,
+    vm: RemoteViewModel,
+    appsActive: Boolean,
+    onShowRemote: () -> Unit,
+    onToggleApps: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .recessed(RoundedCornerShape(30.dp))
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        BottomTab(Icons.Default.SettingsRemote, stringResource(R.string.cd_remote), !state.keyboardOpen && !appsActive, onShowRemote, Modifier.weight(1f))
+        BottomTab(Icons.Default.Keyboard, stringResource(R.string.cd_keyboard), state.keyboardOpen, { vm.toggleKeyboard() }, Modifier.weight(1f))
+        BottomTab(Icons.Default.Apps, stringResource(R.string.cd_apps), appsActive, onToggleApps, Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun BottomTab(
+    icon: ImageVector,
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val scheme = MaterialTheme.colorScheme
+    Column(
+        modifier
+            .height(52.dp)
+            .clip(RoundedCornerShape(26.dp))
+            .background(if (selected) Puck.colors.raised else Color.Transparent)
+            .semantics(mergeDescendants = true) { this.selected = selected }
+            .clickable(role = Role.Tab, onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(icon, contentDescription = null, tint = if (selected) scheme.onSurface else scheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+        Text(label, style = PuckText.caption, color = if (selected) scheme.onSurface else scheme.onSurfaceVariant, maxLines = 1)
     }
 }
 
@@ -331,14 +392,16 @@ private fun PhoneRemoteContent(
     onToggleApps: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
+        val showRemote = {
+            if (state.keyboardOpen) vm.toggleKeyboard()
+            if (showApps) onToggleApps()
+        }
         RemoteHeader(
             device, state, vm, feedback,
             appsActive = showApps,
             onToggleApps = onToggleApps,
-            onShowRemote = {
-                if (state.keyboardOpen) vm.toggleKeyboard()
-                if (showApps) onToggleApps()
-            },
+            onShowRemote = showRemote,
+            tabsInHeader = false,
         )
 
         state.error?.let { message ->
@@ -414,9 +477,12 @@ private fun PhoneRemoteContent(
             Spacer(Modifier.weight(1f))
             Deck(state, vm)
             Spacer(Modifier.weight(1f))
+        } else {
+            // With the app grid open the grid takes the remaining height.
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
+        BottomTabs(state, vm, appsActive = showApps, onShowRemote = showRemote, onToggleApps = onToggleApps)
     }
 }
 
