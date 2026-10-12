@@ -32,12 +32,12 @@ talking straight to your Apple TV over the LAN.
 - **Multiple Apple TVs, properly paired.** Discovery finds every Apple TV on
   your network, and Puck keeps more than one paired at a time — switch between
   them from one list instead of re-pairing every time you change rooms.
-- **A D-pad that works like the real remote.** Tap a direction for one step,
-  hold to repeat, or drag anywhere on the pad to pan and momentum-scroll —
-  one surface, not an analogue joystick.
-- **Menu, Home, Play/Pause, Power** — the play button reflects real playback
-  state; power taps open Control Centre and holds wake a sleeping Apple TV,
-  same as the hardware remote.
+- **A trackpad that works like the real remote.** Tap an edge for one step,
+  hold to repeat, press the middle to select, or swipe anywhere to pan and
+  momentum-scroll. Prefer buttons? Switch to a classic D-pad in Settings.
+- **Back, Home, Play/Pause, Power, volume and mute** — the play button
+  reflects real playback state; power taps open Control Centre and holds wake
+  a sleeping Apple TV, same as the hardware remote.
 - **App drawer** with real tvOS app icons, fetched from the App Store.
 - **Text entry** straight from your phone's keyboard, including a lock-screen
   reply field when the TV asks for text while your phone is locked.
@@ -109,7 +109,7 @@ Found a security issue? Please open an issue.
 ## Building
 
 Requires **JDK 21** (Android Gradle Plugin does not support JDK 25) and the
-Android SDK with platform 35.
+Android SDK with platform 36.
 
 ```bash
 ./gradlew :app:assembleDebug      # installable debug APK

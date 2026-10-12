@@ -34,9 +34,10 @@ Description: |-
     one of them. Speaks Apple's Companion Link protocol natively in Kotlin —
     no companion server, no bridge, nothing else to run.
 
-    * Siri-Remote-style D-pad: tap a direction for one step, hold to repeat,
-      drag anywhere to pan and momentum-scroll
-    * Menu, Home, Play/Pause, Power (tap for Control Centre, hold to wake)
+    * A plain glass trackpad (tap an edge to step, hold to repeat, swipe to
+      pan and scroll) or, in Settings, a classic D-pad
+    * Back, Home, Play/Pause, volume with mute, and Power (tap for Control
+      Centre, hold to wake)
     * App drawer with real tvOS app icons
     * Text entry from your phone's keyboard, with a lock-screen reply prompt
     * Now Playing: artwork, scrubber, skip, volume
