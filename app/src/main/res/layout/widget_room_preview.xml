@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Picker preview of the Room widget: the 1x1 tile with sample text. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools"  android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/w_bg_tile" android:orientation="vertical" android:gravity="center"
+    android:paddingTop="8dp" android:paddingStart="6dp" android:paddingEnd="6dp" android:paddingBottom="7dp">
+        <FrameLayout android:id="@+id/w_mark" android:layout_width="34dp" android:layout_height="34dp">
+            <ImageView android:id="@+id/w_ring" android:layout_width="match_parent" android:layout_height="match_parent"
+                android:src="@drawable/w_ring" android:importantForAccessibility="no" />
+            <ImageView android:id="@+id/w_dashed" android:layout_width="match_parent" android:layout_height="match_parent"
+                android:src="@drawable/w_ring_dashed" android:visibility="gone" android:importantForAccessibility="no" />
+            <ImageView android:id="@+id/w_glyph" android:layout_width="20dp" android:layout_height="20dp"
+                android:layout_gravity="center" android:src="@drawable/ic_widget_remote"
+                android:tint="@color/puck_w_c_glyph" android:importantForAccessibility="no" />
+            <ImageView android:id="@+id/w_add" android:layout_width="18dp" android:layout_height="18dp"
+                android:layout_gravity="center" android:src="@drawable/ic_w_add"
+                android:tint="@color/puck_w_on_surface_variant" android:visibility="gone" android:importantForAccessibility="no" />
+            <TextView android:id="@+id/w_badge" android:layout_width="16dp" android:layout_height="16dp"
+                android:layout_gravity="top|end" android:layout_marginTop="-4dp" android:layout_marginEnd="-5dp"
+                android:background="@drawable/w_badge" android:gravity="center" android:text="!"
+                android:textSize="11sp" android:textStyle="bold" android:includeFontPadding="false"
+                android:textColor="@color/puck_w_on_error" android:visibility="gone" android:importantForAccessibility="no" />
+        </FrameLayout>
+    <FrameLayout android:layout_width="match_parent" android:layout_height="5dp" />
+    <TextView android:id="@+id/w_name" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium" android:textSize="11sp" android:maxLines="2" android:ellipsize="end"
+                android:includeFontPadding="false" android:gravity="center" android:textColor="@color/puck_w_c_name_tile" android:lineSpacingExtra="0dp" android:text="@string/widget_preview_name" />
+</LinearLayout>

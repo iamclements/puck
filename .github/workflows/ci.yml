@@ -1,10 +1,9 @@
 name: CI
 
-# Two long-lived branches, one environment each:
-#   dev   -> "dev" environment:  every green push publishes a pre-release APK
-#                                (a separate app, "Puck Dev") for testing.
-#   main  -> "prod" environment: releases are cut by tagging main (release.yml).
-# Pull requests into either branch run the same checks. See docs/RELEASING.md.
+# Checks only. Nothing is published from here: a dev build is cut on demand by
+# pushing a dev-N tag (dev-release.yml, tools/tag_dev.sh) and a production
+# release by tagging main (release.yml). Pull requests into either long-lived
+# branch, and pushes to them, run the same checks. See docs/RELEASING.md.
 
 on:
   push:
@@ -22,7 +21,10 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  # Two jobs that run side by side: the minified (R8) build is the slowest step
+  # by far, so it does not wait behind the tests and lint, and vice versa.
+  check:
+    name: Tests and lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,40 +38,42 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # Conformance tests are the meaningful gate: they check the crypto and
-      # wire format byte-for-byte against reference vectors.
-      - name: Protocol conformance tests
-        run: ./gradlew :protocol:test
+      # One invocation, so Gradle configures once and runs independent tasks in
+      # parallel. Conformance tests are the meaningful gate: they check the
+      # crypto and wire format byte-for-byte against reference vectors. Lint
+      # compiles the debug variant, so a separate debug build would be redundant.
+      - name: Protocol tests, app tests and lint
+        run: ./gradlew :protocol:test :app:testDebugUnitTest :app:lintDebug --continue
 
-      - name: App unit tests
-        run: ./gradlew :app:testDebugUnitTest
+      - name: Upload reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-reports
+          path: |
+            protocol/build/reports/tests/test/
+            app/build/reports/tests/testDebugUnitTest/
+            app/build/reports/lint-results-debug.html
 
-      - name: Android Lint
-        run: ./gradlew :app:lintDebug
+  build:
+    name: Minified build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Build debug APK
-        run: ./gradlew :app:assembleDebug
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       # The minified build is what ships; building it on every run catches R8
       # and resource-shrinking breakage before a release, not during one.
       - name: Build minified dev APK
         run: ./gradlew :app:assembleDev
-
-      - name: Upload test report on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-report
-          path: |
-            protocol/build/reports/tests/test/
-            app/build/reports/tests/testDebugUnitTest/
-
-      - name: Upload lint report on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: lint-report
-          path: app/build/reports/lint-results-debug.html
 
   commitlint:
     # Only meaningful on a PR: a push to main has no "range" of new commits to
@@ -82,67 +86,3 @@ jobs:
         with:
           fetch-depth: 0
       - uses: wagoid/commitlint-github-action@v6
-
-  deploy-dev:
-    name: Publish dev pre-release
-    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-    needs: test
-    runs-on: ubuntu-latest
-    environment: dev
-    permissions:
-      contents: write
-    env:
-      GH_TOKEN: ${{ github.token }}
-      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '21'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
-      # Signed with the release key when this repo has it, so a dev build can
-      # be installed over the previous one. Without it (a fork) the build falls
-      # back to the debug key and still works.
-      - name: Decode signing keystore
-        if: env.HAS_KEYSTORE == 'true'
-        run: |
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > app/release.jks
-          cat > keystore.properties <<EOF
-          storeFile=release.jks
-          storePassword=$ANDROID_KEYSTORE_PASSWORD
-          keyAlias=$ANDROID_KEY_ALIAS
-          keyPassword=$ANDROID_KEY_PASSWORD
-          EOF
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-
-      - name: Build dev APK
-        run: ./gradlew :app:assembleDev -PciRun=${{ github.run_number }}
-
-      - name: Clean up signing material
-        if: always()
-        run: rm -f app/release.jks keystore.properties
-
-      - name: Publish pre-release
-        run: |
-          TAG="dev-${{ github.run_number }}"
-          gh release create "$TAG" app/build/outputs/apk/dev/puck-*.apk \
-            --target "$GITHUB_SHA" --prerelease \
-            --title "Dev build $TAG" \
-            --notes "Pre-release build of \`dev\` at $GITHUB_SHA. Installs as **Puck Dev** (dev.danielclements.puck.dev), beside the real app. Not for release."
-
-      # Keep the release list readable: only the ten newest dev builds stay.
-      - name: Prune old dev pre-releases
-        run: |
-          gh release list --limit 200 --json tagName \
-            --jq '[.[].tagName | select(startswith("dev-"))] | .[10:] | .[]' |
-            xargs -r -n1 gh release delete --cleanup-tag --yes

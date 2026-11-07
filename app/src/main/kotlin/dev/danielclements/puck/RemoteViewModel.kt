@@ -162,7 +162,7 @@ class RemoteViewModel(
     // Touch samples for the pad. Declared ahead of init: the drain coroutine
     // starts there, and a property read before its declaration line would be
     // null — the intermittent startup crash.
-    private val touchInput = Channel<TouchSample>(Channel.UNLIMITED)
+    private val touchInput = Channel<TrackpadSample>(Channel.UNLIMITED)
 
     private val _state = MutableStateFlow(UiState(settings = settingsStore.load()))
     val state: StateFlow<UiState> = _state.asStateFlow()
@@ -187,6 +187,7 @@ class RemoteViewModel(
         }
         drainTouchInput()
         AppShortcuts.sync(app, store)
+        QuickTiles.sync(app, store)
         if (directKey != null) {
             autoConnectAttempted = true
             connectToKnownKey(directKey)
@@ -365,7 +366,8 @@ class RemoteViewModel(
         if (trimmed.isEmpty() || trimmed == device.name) return
         store.setDisplayName(device.credentialKey, trimmed)
         AppShortcuts.sync(getApplication(), store)
-        DeviceWidgetProvider.refreshAll(getApplication())
+        QuickTiles.sync(getApplication(), store)
+        WidgetRefresh.all(getApplication())
         refreshManagedDevices()
         _state.update { s ->
             s.copy(devices = s.devices.map { if (it.credentialKey == device.credentialKey) it.copy(name = trimmed) else it })
@@ -658,10 +660,11 @@ class RemoteViewModel(
         store.forgetAirPlay(device.credentialKey)
         _state.update { it.copy(pairedKeys = it.pairedKeys - device.credentialKey, airplayPaired = false) }
         AppShortcuts.sync(getApplication(), store)
+        QuickTiles.sync(getApplication(), store)
         // Otherwise a widget pinned to this device keeps showing it, and
         // keeps launching straight into it, indefinitely — nothing else
         // about the widget lifecycle would ever notice it was forgotten.
-        DeviceWidgetProvider.refreshAll(getApplication())
+        WidgetRefresh.all(getApplication())
     }
 
     private fun str(id: Int, vararg args: Any?): String =
@@ -713,11 +716,12 @@ class RemoteViewModel(
                 store.saveLastDevice(device)
                 store.saveDevice(device)
                 AppShortcuts.sync(getApplication(), store)
+                QuickTiles.sync(getApplication(), store)
                 // A widget bound to this device may be showing a stale name
                 // (or the stale-binding "tap to configure" placeholder, if
                 // it predates this re-pairing) — refresh it now that the
                 // metadata backing it has changed.
-                DeviceWidgetProvider.refreshAll(getApplication())
+                WidgetRefresh.all(getApplication())
                 // Now-playing must come up on every connect. Previously this
                 // only ran straight after AirPlay pairing, so it silently
                 // stopped working on the next app start.
@@ -885,10 +889,8 @@ class RemoteViewModel(
 
     // -------------------------------------------------- touch-surface stream
 
-    private data class TouchSample(val x: Int, val y: Int, val phase: TouchPhase)
-
-    fun touch(x: Int, y: Int, phase: TouchPhase) {
-        touchInput.trySend(TouchSample(x, y, phase))
+    fun touch(sample: TrackpadSample) {
+        touchInput.trySend(sample)
     }
 
     /**
@@ -902,7 +904,10 @@ class RemoteViewModel(
         netScope.launch {
             var lastHoldNanos = 0L
             for (sample in touchInput) {
-                if (sample.phase == TouchPhase.HOLD) {
+                // A deliberate pause (the finger resting before a re-anchor lift)
+                // is honoured as-is and exempt from the throttle below.
+                if (sample.delayMs > 0) delay(sample.delayMs)
+                else if (sample.phase == TouchPhase.HOLD) {
                     val now = System.nanoTime()
                     if (now - lastHoldNanos < 12_000_000L) continue
                     lastHoldNanos = now

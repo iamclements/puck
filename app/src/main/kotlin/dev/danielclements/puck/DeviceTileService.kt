@@ -15,7 +15,8 @@ import dev.atvremote.protocol.discovery.AppleTvDevice
  *
  * Android doesn't let an app spawn one tile per paired device dynamically —
  * each tile is a separately declared component the user adds by hand from
- * the Quick Settings editor — so there are a fixed two slots. Until a slot
+ * the Quick Settings editor — so there is a fixed set of slots ([QuickTiles]),
+ * of which only as many as there are saved TVs are offered. Until a slot
  * is explicitly bound, it falls back to "the Nth most recently used Apple
  * TV," same as the long-press launcher shortcuts ([AppShortcuts]).
  */
@@ -69,5 +70,23 @@ abstract class DeviceTileServiceBase(private val slot: Int) : TileService() {
 /** Slot 0: the single most recently used Apple TV. */
 class DeviceTileOne : DeviceTileServiceBase(slot = 0)
 
-/** Slot 1: the second most recently used Apple TV. */
+/** Slot 1: the next most recently used Apple TV. */
 class DeviceTileTwo : DeviceTileServiceBase(slot = 1)
+
+/** Slot 2: the next most recently used Apple TV. */
+class DeviceTileThree : DeviceTileServiceBase(slot = 2)
+
+/** Slot 3: the next most recently used Apple TV. */
+class DeviceTileFour : DeviceTileServiceBase(slot = 3)
+
+/** Slot 4: the next most recently used Apple TV. */
+class DeviceTileFive : DeviceTileServiceBase(slot = 4)
+
+/** Slot 5: the next most recently used Apple TV. */
+class DeviceTileSix : DeviceTileServiceBase(slot = 5)
+
+/** Slot 6: the next most recently used Apple TV. */
+class DeviceTileSeven : DeviceTileServiceBase(slot = 6)
+
+/** Slot 7: the next most recently used Apple TV. */
+class DeviceTileEight : DeviceTileServiceBase(slot = 7)

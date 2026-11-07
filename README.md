@@ -6,9 +6,9 @@
 **A native Android remote for Apple TV — built to control more than one.**
 
 [![CI](https://github.com/iamclements/puck/actions/workflows/ci.yml/badge.svg)](https://github.com/iamclements/puck/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/iamclements/puck/actions/workflows/codeql.yml/badge.svg)](https://github.com/iamclements/puck/actions/workflows/codeql.yml)
 [![Latest release](https://img.shields.io/github/v/release/iamclements/puck?label=release)](https://github.com/iamclements/puck/releases/latest)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Conventional Commits](https://img.shields.io/badge/commits-conventional-fe5196.svg)](https://www.conventionalcommits.org/en/v1.0.0/)
 
 </div>
 
@@ -21,11 +21,16 @@ talking straight to your Apple TV over the LAN.
 > used here solely to describe compatibility.
 
 <p align="center">
-  <img src="docs/screenshots/devices.png" width="23%" alt="Device list, showing three paired Apple TVs" />
-  <img src="docs/screenshots/remote.png" width="23%" alt="Remote screen, light theme" />
-  <img src="docs/screenshots/remote_dark.png" width="23%" alt="Remote screen, dark theme" />
-  <img src="docs/screenshots/apps.png" width="23%" alt="App drawer" />
+  <img src="docs/screenshots/devices.png" width="30%" alt="Device list with a paired Apple TV" />
+  <img src="docs/screenshots/remote.png" width="30%" alt="The remote: now playing, trackpad, Back, Play/Pause, Home and volume (light theme)" />
+  <img src="docs/screenshots/remote_dark.png" width="30%" alt="The remote in the dark theme" />
 </p>
+<p align="center">
+  <img src="docs/screenshots/apps.png" width="30%" alt="App drawer" />
+  <img src="docs/screenshots/settings.png" width="30%" alt="Settings: remote style, controls side and touchpad sensitivity" />
+  <img src="docs/screenshots/widgets.png" width="30%" alt="Home-screen widgets: Action button, Rooms, Room tile and a Room strip with Play/Pause" />
+</p>
+<p align="center"><sub>Screenshots are from an Android emulator: the built-in demo mode for the remote, apps and settings, and placeholder TVs behind the widgets. No Apple TV is being controlled.</sub></p>
 
 ## Features
 
@@ -38,6 +43,9 @@ talking straight to your Apple TV over the LAN.
 - **Back, Home, Play/Pause, Power and volume** — the play button
   reflects real playback state; power taps open Control Centre and holds wake
   a sleeping Apple TV, same as the hardware remote.
+- **Only your Apple TVs in the list.** Macs and other devices that speak the
+  same protocol are hidden unless you ask for them with a switch on the scan
+  screen.
 - **Add by IP address** for networks where discovery cannot see the Apple TV
   (guest Wi-Fi, mesh, another subnet), and a **demo mode** to look around
   with no Apple TV at all.
@@ -46,9 +54,19 @@ talking straight to your Apple TV over the LAN.
   reply field when the TV asks for text while your phone is locked.
 - **Now playing** — artwork, a draggable scrubber, skips and volume, backed by
   a full media notification and lock-screen controls.
-- **Home-screen widget, Quick Settings tiles, and launcher shortcuts** — jump
+- **Home-screen widgets, Quick Settings tiles, and launcher shortcuts** — jump
   straight into a specific Apple TV without opening the app first.
-- **Material You** dynamic colour on Android 12+.
+  - *Room* widget: one TV, from a single tile up to a panel with Play/Pause,
+    Sleep and volume.
+  - *Rooms* widget: all your TVs as keys, the one you used last first. Offered
+    once you have two.
+  - *Action button* widget: Play/Pause, Wake or Sleep in one tap.
+  - One **Quick Settings tile per saved TV**: one TV shows one tile, three
+    show three.
+
+  Specs in [`docs/WIDGET_SPEC.md`](docs/WIDGET_SPEC.md).
+- **Material You** dynamic colour on Android 12+, light and dark themes, and
+  layouts for tablets and foldables.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for how the protocol layer
 and Android app are put together — Companion Link pairing, the AirPlay/MRP
@@ -66,9 +84,9 @@ Requires **Android 8.0 (API 26)** or newer, on the same Wi-Fi network as the
 Apple TV. Installing the GitHub release needs "allow installation from unknown
 sources" since it isn't yet on a store.
 
-Pre-release builds named `dev-N` on the [Releases page](../../releases) are
-test builds of the `dev` branch. They install as a separate app, **Puck Dev**,
-next to the real one, and are not meant for everyday use.
+Builds named `dev-N` on the [Releases page](../../releases) are pre-release
+test builds of the `dev` branch, cut on demand. They install as a separate app,
+**Puck Dev**, next to the real one, and are not meant for everyday use.
 
 ## Pairing
 
@@ -111,7 +129,16 @@ your device and what doesn't.
   installed on your TV. Everything else — the remote itself, pairing,
   now-playing — works entirely on the LAN.
 
-Found a security issue? Please open an issue.
+**How the code is checked.** [CodeQL](https://github.com/iamclements/puck/actions/workflows/codeql.yml)
+analyses the Kotlin code, the Python tooling and the GitHub workflows on every
+push and pull request and weekly. GitHub secret scanning with push protection
+is on, Dependabot proposes dependency updates (and security updates) weekly,
+and the protocol layer's crypto is tested byte-for-byte against pyatv reference
+vectors. Results are under the repository's Security tab.
+
+**Found a security issue?** Please report it privately through
+[GitHub's private vulnerability reporting](https://github.com/iamclements/puck/security/advisories/new)
+rather than a public issue.
 
 ## Building
 
@@ -148,14 +175,14 @@ accepts.
 
 Commits follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
 (`feat: ...`, `fix: ...`, `docs: ...`, and so on) — CI checks this on every
-pull request. `./gradlew :app:lintDebug` also runs in CI and is worth a local
-run before pushing.
+pull request. Lint and CodeQL also run on every pull request; `./gradlew
+:app:lintDebug` is worth a local run before pushing.
 
 There are two long-lived branches: **`dev`** is where work lands and is tested
-(every push builds a *Puck Dev* pre-release), and **`main`** is production, only
-ever updated from `dev` and tagged for release. **Open pull requests against
-`dev`.** The full flow, including how a release is cut, is in
-[docs/RELEASING.md](docs/RELEASING.md).
+(a *Puck Dev* pre-release is cut from it on demand), and **`main`** is
+production, only ever updated from `dev` and tagged for release. **Open pull
+requests against `dev`.** The full flow, including how a dev build and a
+release are cut, is in [docs/RELEASING.md](docs/RELEASING.md).
 
 ## Credits
 

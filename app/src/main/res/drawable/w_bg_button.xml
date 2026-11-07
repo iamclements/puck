@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="@dimen/puck_w_radius" />
+    <solid android:color="@color/puck_w_button" />
+    <stroke android:width="1dp" android:color="@color/puck_w_tile_stroke" />
+</shape>

@@ -56,10 +56,11 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
-        <!-- Home-screen widget: a 1x1 tile pinned to one specific Apple TV. -->
+        <!-- Home-screen widgets: Room (one TV), Rooms (all TVs), Action button. -->
         <receiver
             android:name=".DeviceWidgetProvider"
-            android:exported="false">
+            android:exported="false"
+            android:label="@string/widget_room_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -67,6 +68,46 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/device_widget_info" />
         </receiver>
+
+        <!-- Switched on by WidgetAvailability once a second TV is paired. -->
+        <receiver
+            android:name=".RoomsWidgetProvider"
+            android:enabled="false"
+            android:exported="false"
+            android:label="@string/widget_rooms_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/rooms_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".ActionWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_action_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/action_widget_info" />
+        </receiver>
+
+        <!-- Widget button taps: sends the command in the background. -->
+        <receiver
+            android:name=".WidgetActionReceiver"
+            android:exported="false" />
+
+        <activity
+            android:name=".ActionWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Puck">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
 
         <!--
           Exported because the system launches it on the widget host's behalf
@@ -83,16 +124,9 @@
         </activity>
 
         <!--
-          Two Quick Settings tiles, each tracking one of the same "most
-          recently used" slots as the launcher shortcuts (AppShortcuts) —
-          Quick Settings has no per-tile configuration step at add-time the
-          way widgets do, so there's no user-facing way to bind a specific
-          tile to a specific device the way the widget does.
-        -->
-        <!--
-          Long-pressing either tile opens this to pick which Apple TV it's
-          pinned to — Quick Settings has no add-time configuration step the
-          way widgets do, so this is the only hook Android gives for it.
+          Long-pressing a tile opens this to pick which Apple TV it is pinned
+          to — Quick Settings has no add-time configuration step the way
+          widgets do, so this is the only hook Android gives for it.
         -->
         <activity
             android:name=".TileConfigActivity"
@@ -103,11 +137,16 @@
             </intent-filter>
         </activity>
 
+        <!--
+          One tile per saved Apple TV. The slots after the first are declared
+          disabled and switched on by QuickTiles as TVs are paired, because
+          Android cannot add a tile at runtime.
+        -->
         <service
             android:name=".DeviceTileOne"
             android:exported="true"
             android:icon="@drawable/ic_widget_remote"
-            android:label="@string/tile_unconfigured_label"
+            android:label="@string/tile_label_1"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
@@ -116,9 +155,82 @@
 
         <service
             android:name=".DeviceTileTwo"
+            android:enabled="false"
             android:exported="true"
             android:icon="@drawable/ic_widget_remote"
-            android:label="@string/tile_unconfigured_label"
+            android:label="@string/tile_label_2"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".DeviceTileThree"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_widget_remote"
+            android:label="@string/tile_label_3"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".DeviceTileFour"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_widget_remote"
+            android:label="@string/tile_label_4"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".DeviceTileFive"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_widget_remote"
+            android:label="@string/tile_label_5"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".DeviceTileSix"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_widget_remote"
+            android:label="@string/tile_label_6"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".DeviceTileSeven"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_widget_remote"
+            android:label="@string/tile_label_7"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".DeviceTileEight"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@drawable/ic_widget_remote"
+            android:label="@string/tile_label_8"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />

@@ -5,8 +5,8 @@ Two environments, one branch each.
 | | **dev** | **prod** |
 |---|---|---|
 | Branch | `dev` (long-lived) | `main` |
-| Trigger | every push to `dev` that passes CI | a `vX.Y.Z` tag on `main` |
-| Output | GitHub **pre-release** `dev-N` with an APK | GitHub **Release** with APK + AAB, optional Play upload |
+| Trigger | **on demand**: a `dev-N` tag pushed from the tip of `dev` (`tools/tag_dev.sh`) | a `vX.Y.Z` tag on `main` |
+| Output | GitHub **pre-release** "Dev build N" with an APK, never marked Latest | GitHub **Release** with APK + AAB, optional Play upload |
 | App on the phone | **Puck Dev** (`dev.danielclements.puck.dev`) | **Puck** (`dev.danielclements.puck`) |
 | Signed with | release key (debug key on forks) | release key |
 | Approval | none | optional reviewer gate on the `prod` environment |
@@ -21,10 +21,22 @@ so each new one upgrades the last.
 feature branch ──PR──▶ dev ──(test the dev APK on a phone)──PR──▶ main ──tag──▶ release
 ```
 
-1. Branch from `dev`, open a PR **into `dev`**. CI runs tests, lint, a debug
-   build, a minified build, and commitlint on the PR.
-2. Merge. CI publishes a `dev-N` pre-release (the ten newest are kept). Install
-   the APK from the [Releases page](https://github.com/iamclements/puck/releases) and try it.
+1. Branch from `dev`, open a PR **into `dev`**. CI runs tests and lint, a minified
+   build, and commitlint on the PR (the first two in parallel).
+2. Merge. Merging does **not** publish anything; CI only runs the checks. When
+   you want a build to try on a phone, cut one:
+
+   ```bash
+   git checkout dev && git pull
+   tools/tag_dev.sh          # tags the tip of dev as dev-N and pushes the tag
+   ```
+
+   That starts the **Dev release** workflow, which verifies the tag is on `dev`,
+   runs the tests, and publishes a `dev-N` pre-release (the ten newest are
+   kept). Install the APK from the
+   [Releases page](https://github.com/iamclements/puck/releases) and try it.
+   Dev builds are listed as pre-releases and are never "Latest", so the
+   download link on the README keeps pointing at the real release.
 3. When `dev` is good, open a PR `dev` → `main` (a merge commit or squash, as
    you prefer). CI runs again.
 4. To release, bump `versionName` and `versionCode` in `app/build.gradle.kts`
@@ -66,9 +78,23 @@ feature branch ──PR──▶ dev ──(test the dev APK on a phone)──PR
 - **Secrets** (repo or per environment): `ANDROID_KEYSTORE_BASE64`,
   `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
 - **Branch protection** (Settings → Branches), for `main` and `dev`: require a
-  pull request and the `build` and `commitlint` checks. Block force pushes to
+  pull request and the `Tests and lint`, `Minified build`, `commitlint` and
+  `Analyze (java-kotlin)` checks. Block force pushes to
   `main`.
 - Default branch can stay `main`.
+
+## Automation that runs by itself
+
+- **Dependabot** opens dependency PRs against **`dev`** (weekly, grouped, with
+  `chore(deps)` / `ci(deps)` titles so commitlint passes). They are tried in a
+  dev build before they can reach `main`.
+- **CodeQL** scans the Kotlin code, the Python tooling and the workflows on every
+  push and PR to `main`/`dev` and weekly. Findings are under Security →
+  Code scanning.
+
+Both of these are read from the **default branch**, so a change to
+`.github/dependabot.yml` or the CodeQL schedule only takes effect once it has
+been promoted from `dev` to `main`.
 
 ## Guardrails worth knowing
 

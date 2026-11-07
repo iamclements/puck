@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget colour tokens, WIDGET_SPEC.md section 1.1. -->
+<!-- Brand, dark. -->
+<resources>
+    <color name="puck_w_surface">#FF1D1E23</color>
+    <color name="puck_w_on_surface">#FFE3E2E6</color>
+    <color name="puck_w_on_surface_variant">#FFC4C6D0</color>
+    <color name="puck_w_outline">#FF44474F</color>
+    <color name="puck_w_tile">#FF284777</color>
+    <color name="puck_w_glyph">#FFD6E3FF</color>
+    <color name="puck_w_hero">#FFAAC7FF</color>
+    <color name="puck_w_on_hero">#FF0A305F</color>
+    <color name="puck_w_button">#FF3A4356</color>
+    <color name="puck_w_on_button">#FFDAE2F9</color>
+    <color name="puck_w_tertiary">#FF563E5C</color>
+    <color name="puck_w_on_tertiary">#FFF9D8FD</color>
+    <color name="puck_w_error">#FFFFB4AB</color>
+    <color name="puck_w_on_error">#FF690005</color>
+</resources>

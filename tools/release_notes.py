@@ -1,7 +1,9 @@
 """Builds a GitHub release body from Conventional Commits since the previous tag.
 
-Run from CI (.github/workflows/release.yml) with TAG and REPO set in the
-environment; writes RELEASE_NOTES.md in the repo root. Commits that don't
+Run from CI (.github/workflows/release.yml and dev-release.yml) with TAG and
+REPO set in the environment, and optionally TAG_MATCH (a git tag glob, default
+"v*", or "dev-*" for dev builds) choosing which earlier tags count as the
+previous release; writes RELEASE_NOTES.md in the repo root. Commits that don't
 follow the Conventional Commits format (everything before that was adopted,
 plus any stray commit since) land in a catch-all "Other changes" section
 rather than being dropped.
@@ -41,10 +43,18 @@ def git(*args: str) -> str:
 
 
 def previous_tag(tag: str) -> str | None:
-    try:
-        return git("describe", "--tags", "--abbrev=0", "--match", "v*", f"{tag}^")
-    except subprocess.CalledProcessError:
-        return None
+    # Production notes compare against the last release, dev notes against the
+    # last dev build; the two kinds of tag must not see each other.
+    match = os.environ.get("TAG_MATCH", "v*")
+    # The first dev build has no earlier dev build to compare with; fall back to
+    # the last release so its notes are "what changed since v1.x", not the whole
+    # history of the project.
+    for pattern in dict.fromkeys([match, "v*"]):
+        try:
+            return git("describe", "--tags", "--abbrev=0", "--match", pattern, f"{tag}^")
+        except subprocess.CalledProcessError:
+            continue
+    return None
 
 
 def main() -> None:
