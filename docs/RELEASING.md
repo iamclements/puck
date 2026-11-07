@@ -21,8 +21,8 @@ so each new one upgrades the last.
 feature branch ──PR──▶ dev ──(test the dev APK on a phone)──PR──▶ main ──tag──▶ release
 ```
 
-1. Branch from `dev`, open a PR **into `dev`**. CI runs tests, lint, a debug
-   build, a minified build, and commitlint on the PR.
+1. Branch from `dev`, open a PR **into `dev`**. CI runs tests and lint, a minified
+   build, and commitlint on the PR (the first two in parallel).
 2. Merge. CI publishes a `dev-N` pre-release (the ten newest are kept). Install
    the APK from the [Releases page](https://github.com/iamclements/puck/releases) and try it.
 3. When `dev` is good, open a PR `dev` → `main` (a merge commit or squash, as
@@ -66,7 +66,8 @@ feature branch ──PR──▶ dev ──(test the dev APK on a phone)──PR
 - **Secrets** (repo or per environment): `ANDROID_KEYSTORE_BASE64`,
   `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`.
 - **Branch protection** (Settings → Branches), for `main` and `dev`: require a
-  pull request and the `build` and `commitlint` checks. Block force pushes to
+  pull request and the `Tests and lint`, `Minified build` and `commitlint`
+  checks. Block force pushes to
   `main`.
 - Default branch can stay `main`.
 

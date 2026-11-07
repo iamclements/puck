@@ -30,6 +30,14 @@
 
     <!-- Quick Settings tiles -->
     <string name="tile_unconfigured_label">Add a TV</string>
+    <string name="tile_label_1">Apple TV 1</string>
+    <string name="tile_label_2">Apple TV 2</string>
+    <string name="tile_label_3">Apple TV 3</string>
+    <string name="tile_label_4">Apple TV 4</string>
+    <string name="tile_label_5">Apple TV 5</string>
+    <string name="tile_label_6">Apple TV 6</string>
+    <string name="tile_label_7">Apple TV 7</string>
+    <string name="tile_label_8">Apple TV 8</string>
     <string name="tile_subtitle">Tap to open</string>
     <string name="tile_pick_device_title">Choose a TV for this tile</string>
     <string name="tile_pick_device_empty">Pair with an Apple TV in the app first, then add this tile.</string>

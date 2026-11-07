@@ -22,7 +22,10 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  # Two jobs that run side by side: the minified (R8) build is the slowest step
+  # by far, so it does not wait behind the tests and lint, and vice versa.
+  check:
+    name: Tests and lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,40 +39,44 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # Conformance tests are the meaningful gate: they check the crypto and
-      # wire format byte-for-byte against reference vectors.
-      - name: Protocol conformance tests
-        run: ./gradlew :protocol:test
+      # One invocation, so Gradle configures once and runs independent tasks in
+      # parallel. Conformance tests are the meaningful gate: they check the
+      # crypto and wire format byte-for-byte against reference vectors. Lint
+      # compiles the debug variant, so a separate debug build would be redundant.
+      - name: Protocol tests, app tests and lint
+        run: ./gradlew :protocol:test :app:testDebugUnitTest :app:lintDebug --continue
 
-      - name: App unit tests
-        run: ./gradlew :app:testDebugUnitTest
+      - name: Upload reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-reports
+          path: |
+            protocol/build/reports/tests/test/
+            app/build/reports/tests/testDebugUnitTest/
+            app/build/reports/lint-results-debug.html
 
-      - name: Android Lint
-        run: ./gradlew :app:lintDebug
+  build:
+    name: Minified build
+    # A push to dev builds this same APK in deploy-dev, so it is not built twice.
+    if: ${{ !(github.event_name == 'push' && github.ref == 'refs/heads/dev') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Build debug APK
-        run: ./gradlew :app:assembleDebug
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
 
       # The minified build is what ships; building it on every run catches R8
       # and resource-shrinking breakage before a release, not during one.
       - name: Build minified dev APK
         run: ./gradlew :app:assembleDev
-
-      - name: Upload test report on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-report
-          path: |
-            protocol/build/reports/tests/test/
-            app/build/reports/tests/testDebugUnitTest/
-
-      - name: Upload lint report on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: lint-report
-          path: app/build/reports/lint-results-debug.html
 
   commitlint:
     # Only meaningful on a PR: a push to main has no "range" of new commits to
@@ -86,7 +93,7 @@ jobs:
   deploy-dev:
     name: Publish dev pre-release
     if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
-    needs: test
+    needs: check
     runs-on: ubuntu-latest
     environment: dev
     permissions:
