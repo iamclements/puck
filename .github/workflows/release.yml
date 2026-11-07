@@ -19,7 +19,7 @@ jobs:
     name: Verify tag
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # needs main's history and the previous tag
       - name: Check the tag is releasable
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: prod
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # release notes need the previous tag's history
 
