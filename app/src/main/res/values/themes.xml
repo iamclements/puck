@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Puck" parent="android:Theme.Material.NoActionBar">
-        <item name="android:statusBarColor">#FF101014</item>
-        <item name="android:navigationBarColor">#FF101014</item>
+    <!--
+      Window background matches PuckTheme's fallback surface so there is no
+      dark-to-light flash on launch for people on a light system theme.
+      System bar colours are left to enableEdgeToEdge(); Android 15+ ignores
+      them anyway.
+    -->
+    <style name="Theme.Puck" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
     </style>
 </resources>
