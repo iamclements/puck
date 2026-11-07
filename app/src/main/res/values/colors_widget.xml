@@ -1,7 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Fallback (API < 31): primaryContainer / onPrimaryContainer of the charcoal/blue
-     palette (PuckFallbackDark in PuckTheme.kt) — DESIGN_SPEC.md §9. -->
+<!-- Widget colour tokens, WIDGET_SPEC.md section 1.1. -->
+<!-- Brand, light. Also the fallback below Android 12. -->
 <resources>
-    <color name="puck_widget_tile">#FF284777</color>
-    <color name="puck_widget_glyph">#FFD6E3FF</color>
+    <color name="puck_w_surface">#FFF0F0F7</color>
+    <color name="puck_w_on_surface">#FF1A1B20</color>
+    <color name="puck_w_on_surface_variant">#FF44474E</color>
+    <color name="puck_w_outline">#FFC4C6D0</color>
+    <color name="puck_w_tile">#FFD6E3FF</color>
+    <color name="puck_w_glyph">#FF284777</color>
+    <color name="puck_w_hero">#FF3D5F90</color>
+    <color name="puck_w_on_hero">#FFFFFFFF</color>
+    <color name="puck_w_button">#FFDAE2F9</color>
+    <color name="puck_w_on_button">#FF131C2B</color>
+    <color name="puck_w_tertiary">#FFFAD8FD</color>
+    <color name="puck_w_on_tertiary">#FF29132E</color>
+    <color name="puck_w_error">#FFBA1A1A</color>
+    <color name="puck_w_on_error">#FFFFFFFF</color>
 </resources>

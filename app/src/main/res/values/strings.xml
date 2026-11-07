@@ -21,7 +21,6 @@
     <string name="shortcut_long_label">Open %1$s</string>
 
     <!-- Home-screen widget -->
-    <string name="widget_unconfigured">Add a TV</string>
     <string name="widget_pick_device_title">Choose a TV for this widget</string>
     <string name="widget_pick_device_empty">Pair with an Apple TV in the app first, then add this widget.</string>
 
@@ -210,4 +209,47 @@
     <string name="apple_tv">Apple TV</string>
     <string name="other_device">Other device</string>
     <string name="show_other_devices">Show other devices</string>
+    <!-- Home-screen widgets (WIDGET_SPEC.md) -->
+    <string name="widget_room_label">Room</string>
+    <string name="widget_room_description">Open a TV\'s remote. Wider sizes add Play/Pause and volume.</string>
+    <string name="widget_rooms_label">Rooms</string>
+    <string name="widget_rooms_description">All your TVs. Tap a room to open its remote.</string>
+    <string name="widget_action_label">Action button</string>
+    <string name="widget_action_description">One tap to play or pause, wake or sleep a TV.</string>
+    <string name="widget_preview_name">Your TV</string>
+    <string name="widget_preview_model">Apple TV 4K</string>
+    <string name="widget_choose_tv">Choose TV</string>
+    <string name="widget_choose_a_tv">Choose a TV</string>
+    <string name="widget_tap_to_set_up">Tap to set up</string>
+    <string name="widget_no_longer_paired">No longer paired</string>
+    <string name="widget_open_remote">Open remote</string>
+    <string name="widget_set_up">Set up</string>
+    <string name="widget_connecting">Connecting…</string>
+    <string name="widget_sent">Sent · %1$s</string>
+    <string name="widget_cant_reach">Can\'t reach this TV</string>
+    <string name="widget_rooms_add">Add TV</string>
+    <string name="widget_rooms_none">No TVs yet</string>
+    <string name="widget_rooms_none_hint">Tap to pair one in Puck</string>
+    <string name="widget_pick_action_title">What should this button do?</string>
+    <string name="widget_pick_tv_title">Choose a TV for this widget</string>
+    <string name="widget_action_play_pause">Play / Pause</string>
+    <string name="widget_action_wake">Wake</string>
+    <string name="widget_action_sleep">Sleep</string>
+    <string name="widget_action_wake_desc">Wake the TV from sleep</string>
+    <string name="widget_action_sleep_desc">Put the TV to sleep</string>
+    <string name="widget_action_play_pause_desc">Toggle playback</string>
+    <string name="widget_cmd_play_pause">Play/Pause</string>
+    <string name="widget_cmd_volume_up">Volume up</string>
+    <string name="widget_cmd_volume_down">Volume down</string>
+    <string name="widget_cmd_wake">Wake</string>
+    <string name="widget_cmd_sleep">Sleep</string>
+    <string name="widget_cd_open">Open %1$s remote</string>
+    <string name="widget_cd_play_pause">Play or pause %1$s</string>
+    <string name="widget_cd_volume_up">Volume up, %1$s</string>
+    <string name="widget_cd_volume_down">Volume down, %1$s</string>
+    <string name="widget_cd_sleep">Put %1$s to sleep</string>
+    <string name="widget_cd_wake">Wake %1$s</string>
+    <string name="widget_cd_pair">Pair another TV</string>
+    <string name="widget_room_cd_micro">Puck remote</string>
+    <string name="widget_on_room">on %1$s</string>
 </resources>

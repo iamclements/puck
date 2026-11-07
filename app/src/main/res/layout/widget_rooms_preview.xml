@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Picker preview of the Rooms widget: sample rooms. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/w_bg_card" android:orientation="horizontal" android:padding="7dp">
+    <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:background="@drawable/w_key">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center">
+            <FrameLayout android:layout_width="34dp" android:layout_height="34dp" android:background="@drawable/w_mark_34">
+                <ImageView android:layout_width="18dp" android:layout_height="18dp" android:layout_gravity="center" android:src="@drawable/ic_widget_remote" android:tint="@color/puck_w_glyph" android:importantForAccessibility="no" />
+            </FrameLayout>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:fontFamily="sans-serif-medium" android:textSize="11.5sp" android:maxLines="1" android:gravity="center" android:includeFontPadding="false" android:text="Living" android:textColor="@color/puck_w_on_surface" />
+        </LinearLayout>
+    </FrameLayout>
+    <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="3dp" android:background="@drawable/w_key">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center">
+            <FrameLayout android:layout_width="34dp" android:layout_height="34dp" android:background="@drawable/w_mark_34">
+                <ImageView android:layout_width="18dp" android:layout_height="18dp" android:layout_gravity="center" android:src="@drawable/ic_widget_remote" android:tint="@color/puck_w_glyph" android:importantForAccessibility="no" />
+            </FrameLayout>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:fontFamily="sans-serif-medium" android:textSize="11.5sp" android:maxLines="1" android:gravity="center" android:includeFontPadding="false" android:text="Bedroom" android:textColor="@color/puck_w_on_surface" />
+        </LinearLayout>
+    </FrameLayout>
+</LinearLayout>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Room card (2x1) and strips (3x1/4x1): the buttons are shown by code. WIDGET_SPEC.md 2.2. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" android:id="@android:id/background" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/w_bg_card" android:orientation="horizontal" android:gravity="center_vertical"
+    android:padding="10dp">
+    <LinearLayout android:id="@+id/w_open" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <FrameLayout android:id="@+id/w_tile" android:layout_width="56dp" android:layout_height="56dp" android:background="@drawable/w_mark_56">
+            <FrameLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center">
+        <FrameLayout android:id="@+id/w_mark" android:layout_width="38dp" android:layout_height="38dp">
+            <ImageView android:id="@+id/w_ring" android:layout_width="match_parent" android:layout_height="match_parent"
+                android:src="@drawable/w_ring" android:importantForAccessibility="no" />
+            <ImageView android:id="@+id/w_dashed" android:layout_width="match_parent" android:layout_height="match_parent"
+                android:src="@drawable/w_ring_dashed" android:visibility="gone" android:importantForAccessibility="no" />
+            <ImageView android:id="@+id/w_glyph" android:layout_width="22dp" android:layout_height="22dp"
+                android:layout_gravity="center" android:src="@drawable/ic_widget_remote"
+                android:tint="@color/puck_w_glyph" android:importantForAccessibility="no" />
+            <ImageView android:id="@+id/w_add" android:layout_width="20dp" android:layout_height="20dp"
+                android:layout_gravity="center" android:src="@drawable/ic_w_add"
+                android:tint="@color/puck_w_on_surface_variant" android:visibility="gone" android:importantForAccessibility="no" />
+            <TextView android:id="@+id/w_badge" android:layout_width="16dp" android:layout_height="16dp"
+                android:layout_gravity="top|end" android:layout_marginTop="-4dp" android:layout_marginEnd="-5dp"
+                android:background="@drawable/w_badge" android:gravity="center" android:text="!"
+                android:textSize="11sp" android:textStyle="bold" android:includeFontPadding="false"
+                android:textColor="@color/puck_w_on_error" android:visibility="gone" android:importantForAccessibility="no" />
+        </FrameLayout>
+            </FrameLayout>
+        </FrameLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:layout_marginStart="10dp" android:orientation="vertical">
+            <TextView android:id="@+id/w_name" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium" android:textSize="14sp" android:maxLines="2" android:ellipsize="end"
+                android:includeFontPadding="false" android:gravity="start" android:textColor="@color/puck_w_on_surface"  tools:text="Living Room" />
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp" android:orientation="horizontal" android:gravity="center_vertical">
+                    <ProgressBar android:id="@+id/w_progress" style="?android:attr/progressBarStyleSmall"
+                        android:layout_width="12dp" android:layout_height="12dp" android:layout_marginEnd="6dp"
+                        android:indeterminate="true" android:indeterminateTint="@color/puck_w_hero" android:visibility="gone" />
+                    <ImageView android:id="@+id/w_status_icon" android:layout_width="14dp" android:layout_height="14dp"
+                        android:layout_marginEnd="6dp" android:src="@drawable/ic_w_check" android:tint="@color/puck_w_hero"
+                        android:visibility="gone" android:importantForAccessibility="no" />
+                    <TextView android:id="@+id/w_secondary" android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:textSize="11.5sp" android:maxLines="1" android:ellipsize="end"
+                        android:includeFontPadding="false" android:textColor="@color/puck_w_on_surface_variant" tools:text="Apple TV 4K" />
+                </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+    <FrameLayout android:id="@+id/w_play" android:layout_width="52dp" android:layout_height="52dp" android:layout_marginStart="8dp"
+        android:background="@drawable/w_disc_hero" android:visibility="gone">
+        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:layout_gravity="center"
+            android:src="@drawable/ic_w_play_pause" android:tint="@color/puck_w_on_hero" android:importantForAccessibility="no" />
+    </FrameLayout>
+    <LinearLayout android:id="@+id/w_rocker" android:layout_width="96dp" android:layout_height="52dp" android:layout_marginStart="8dp"
+        android:background="@drawable/w_pill_rocker" android:orientation="horizontal" android:visibility="gone">
+        <FrameLayout android:id="@+id/w_vol_down" android:layout_width="48dp" android:layout_height="match_parent">
+            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:layout_gravity="center"
+                android:src="@drawable/ic_w_minus" android:tint="@color/puck_w_on_button" android:importantForAccessibility="no" />
+        </FrameLayout>
+        <FrameLayout android:layout_width="1dp" android:layout_height="match_parent" android:layout_marginTop="14dp" android:layout_marginBottom="14dp"
+            android:background="@color/puck_w_divider" />
+        <FrameLayout android:id="@+id/w_vol_up" android:layout_width="47dp" android:layout_height="match_parent">
+            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:layout_gravity="center"
+                android:src="@drawable/ic_w_plus" android:tint="@color/puck_w_on_button" android:importantForAccessibility="no" />
+        </FrameLayout>
+    </LinearLayout>
+</LinearLayout>

@@ -14,7 +14,7 @@ EVERYTHING ELSE
 • App drawer with icons, to launch any app on the TV.
 • Type from your phone's keyboard, including a lock-screen reply field.
 • Now Playing with artwork, a draggable scrubber, skip and a media notification with lock-screen controls.
-• Home-screen widget, Quick Settings tiles and launcher shortcuts that jump straight to a specific Apple TV.
+• Home-screen widgets (one TV, all your TVs, or a one-tap Play/Pause, Wake or Sleep button), Quick Settings tiles and launcher shortcuts that jump straight to a specific Apple TV.
 • Material You colours, light and dark themes, and layouts for tablets and foldables.
 
 PRIVATE BY DESIGN

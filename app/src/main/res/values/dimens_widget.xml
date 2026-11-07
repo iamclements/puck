@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Outer widget radius and inner element radius; the system values from Android 12. -->
+    <dimen name="puck_w_radius">22dp</dimen>
+    <dimen name="puck_w_inner_radius">16dp</dimen>
+</resources>
