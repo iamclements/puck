@@ -23,6 +23,8 @@ data class AppSettings(
     val controlsSide: ControlsSide = ControlsSide.RIGHT,
     /** The first-run "how the pad works" overlay has been dismissed. */
     val padHintSeen: Boolean = false,
+    /** List Macs, HomePods and other non-Apple TV devices found on the network. */
+    val showOtherDevices: Boolean = false,
 )
 
 /** User-facing preferences, separate from [CredentialStore]'s per-device data. */
@@ -44,6 +46,7 @@ class SettingsStore(context: Context) {
             ?.let { saved -> ControlsSide.entries.firstOrNull { it.name == saved } }
             ?: ControlsSide.RIGHT,
         padHintSeen = prefs.getBoolean(KEY_PAD_HINT_SEEN, false),
+        showOtherDevices = prefs.getBoolean(KEY_SHOW_OTHERS, false),
     )
 
     fun setHaptics(enabled: Boolean) = prefs.edit().putBoolean(KEY_HAPTICS, enabled).apply()
@@ -57,6 +60,9 @@ class SettingsStore(context: Context) {
         prefs.edit().putString(KEY_REMOTE_STYLE, value.name).apply()
 
     fun setPadHintSeen() = prefs.edit().putBoolean(KEY_PAD_HINT_SEEN, true).apply()
+
+    fun setShowOtherDevices(enabled: Boolean) =
+        prefs.edit().putBoolean(KEY_SHOW_OTHERS, enabled).apply()
 
     /** Whether the up-front "why these permissions" dialog has been shown. */
     fun permissionsExplained(): Boolean = prefs.getBoolean(KEY_PERMS_EXPLAINED, false)
@@ -72,6 +78,7 @@ class SettingsStore(context: Context) {
         private const val KEY_SENSITIVITY = "sensitivity"
         private const val KEY_REMOTE_STYLE = "remote_style"
         private const val KEY_CONTROLS_SIDE = "controls_side"
+        private const val KEY_SHOW_OTHERS = "show_other_devices"
         private const val KEY_PAD_HINT_SEEN = "pad_hint_seen"
         private const val KEY_PERMS_EXPLAINED = "permissions_explained"
     }

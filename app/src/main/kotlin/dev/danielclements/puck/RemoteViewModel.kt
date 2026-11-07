@@ -332,6 +332,11 @@ class RemoteViewModel(
         _state.update { it.copy(settings = it.settings.copy(remoteStyle = value)) }
     }
 
+    fun setShowOtherDevices(enabled: Boolean) {
+        settingsStore.setShowOtherDevices(enabled)
+        _state.update { it.copy(settings = it.settings.copy(showOtherDevices = enabled)) }
+    }
+
     fun dismissPadHint() {
         settingsStore.setPadHintSeen()
         _state.update { it.copy(settings = it.settings.copy(padHintSeen = true)) }

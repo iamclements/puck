@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -124,12 +125,19 @@ fun DeviceListScreen(state: UiState, vm: RemoteViewModel) {
             return
         }
 
+        // Macs, iPhones and HomePods publish the same Companion Link service as
+        // an Apple TV. Paired devices always stay; anything else that does not
+        // identify as an Apple TV is hidden unless the user asks for it.
+        val others = state.devices.filter { !it.isAppleTv && it.credentialKey !in state.pairedKeys }
+        val visible = if (state.settings.showOtherDevices) state.devices
+        else state.devices - others.toSet()
+
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                stringResource(R.string.found_count, state.devices.size),
+                stringResource(R.string.found_count, visible.size),
                 style = PuckText.label,
                 color = scheme.onSurfaceVariant,
             )
@@ -149,22 +157,42 @@ fun DeviceListScreen(state: UiState, vm: RemoteViewModel) {
 
         Spacer(Modifier.height(10.dp))
 
-        if (state.devices.isEmpty() && !state.scanning) {
+        if (visible.isEmpty() && !state.scanning) {
             EmptyState(Modifier.weight(1f))
         } else {
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                items(state.devices, key = { it.credentialKey }) { device ->
+                items(visible, key = { it.credentialKey }) { device ->
                     DeviceRow(
                         name = device.name,
-                        subtitle = "${device.model ?: "Apple TV"}  ·  ${device.address}",
+                        subtitle = "${device.model ?: stringResource(if (device.isAppleTv) R.string.apple_tv else R.string.other_device)}  ·  ${device.address}",
                         paired = device.credentialKey in state.pairedKeys,
                         enabled = !state.busy,
                         onClick = { vm.select(device) },
                     )
                 }
+            }
+        }
+
+        if (others.isNotEmpty() || state.settings.showOtherDevices) {
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(R.string.show_other_devices) +
+                        if (others.isNotEmpty()) " (${others.size})" else "",
+                    style = PuckText.caption,
+                    color = scheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                Switch(
+                    checked = state.settings.showOtherDevices,
+                    onCheckedChange = vm::setShowOtherDevices,
+                )
             }
         }
 

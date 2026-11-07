@@ -199,4 +199,7 @@
     <string name="perm_skip">Not now</string>
     <string name="settings_notifications_off">Notifications are off</string>
     <string name="settings_notifications_off_desc">Turn them on for media controls and the lock-screen keyboard.</string>
+    <string name="apple_tv">Apple TV</string>
+    <string name="other_device">Other device</string>
+    <string name="show_other_devices">Show other devices</string>
 </resources>
