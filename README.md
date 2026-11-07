@@ -30,7 +30,7 @@ talking straight to your Apple TV over the LAN.
   <img src="docs/screenshots/settings.png" width="30%" alt="Settings: remote style, controls side and touchpad sensitivity" />
   <img src="docs/screenshots/widgets.png" width="30%" alt="Home-screen widgets: Action button, Rooms, Room tile and a Room strip with Play/Pause" />
 </p>
-<p align="center"><sub>Screenshots are from an Android emulator: the built-in demo mode, and a placeholder TV entry in the device list. No real Apple TV is shown.</sub></p>
+<p align="center"><sub>Screenshots are from an Android emulator: the built-in demo mode for the remote, apps and settings, and placeholder TVs behind the widgets. No Apple TV is being controlled.</sub></p>
 
 ## Features
 
