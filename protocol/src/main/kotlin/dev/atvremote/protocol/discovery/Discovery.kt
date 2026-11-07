@@ -17,6 +17,14 @@ data class AppleTvDevice(
      * Companion port, so including it would orphan the stored pairing.
      */
     val credentialKey: String get() = identifier ?: address
+
+    /**
+     * Whether this advertises itself as an Apple TV (model "AppleTV6,2" and so
+     * on). Macs, iPhones and HomePods also publish a Companion Link service, but
+     * a Mac sends no model at all, so a missing model counts as "not an Apple
+     * TV". An Apple TV always includes its model.
+     */
+    val isAppleTv: Boolean get() = model?.startsWith("AppleTV") == true
 }
 
 const val COMPANION_SERVICE_TYPE = "_companion-link._tcp"
