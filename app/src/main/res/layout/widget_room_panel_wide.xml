@@ -13,7 +13,7 @@
                 android:src="@drawable/w_ring_dashed" android:visibility="gone" android:importantForAccessibility="no" />
             <ImageView android:id="@+id/w_glyph" android:layout_width="18dp" android:layout_height="18dp"
                 android:layout_gravity="center" android:src="@drawable/ic_widget_remote"
-                android:tint="@color/puck_w_glyph" android:importantForAccessibility="no" />
+                android:tint="@color/puck_w_c_glyph" android:importantForAccessibility="no" />
             <ImageView android:id="@+id/w_add" android:layout_width="16dp" android:layout_height="16dp"
                 android:layout_gravity="center" android:src="@drawable/ic_w_add"
                 android:tint="@color/puck_w_on_surface_variant" android:visibility="gone" android:importantForAccessibility="no" />
@@ -29,18 +29,21 @@
             android:layout_marginStart="8dp" android:orientation="vertical">
             <TextView android:id="@+id/w_name" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-medium" android:textSize="14sp" android:maxLines="1" android:ellipsize="end"
-                android:includeFontPadding="false" android:gravity="start" android:textColor="@color/puck_w_on_surface"  tools:text="Living Room" />
+                android:includeFontPadding="false" android:gravity="start" android:textColor="@color/puck_w_c_name"  tools:text="Living Room" />
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                     android:layout_marginTop="2dp" android:orientation="horizontal" android:gravity="center_vertical">
                     <ProgressBar android:id="@+id/w_progress" style="?android:attr/progressBarStyleSmall"
                         android:layout_width="12dp" android:layout_height="12dp" android:layout_marginEnd="6dp"
                         android:indeterminate="true" android:indeterminateTint="@color/puck_w_hero" android:visibility="gone" />
                     <ImageView android:id="@+id/w_status_icon" android:layout_width="14dp" android:layout_height="14dp"
-                        android:layout_marginEnd="6dp" android:src="@drawable/ic_w_check" android:tint="@color/puck_w_hero"
+                        android:layout_marginEnd="6dp" android:src="@drawable/ic_w_check" android:tint="@color/puck_w_c_status"
                         android:visibility="gone" android:importantForAccessibility="no" />
                     <TextView android:id="@+id/w_secondary" android:layout_width="0dp" android:layout_height="wrap_content"
                         android:layout_weight="1" android:textSize="11.5sp" android:maxLines="1" android:ellipsize="end"
-                        android:includeFontPadding="false" android:textColor="@color/puck_w_on_surface_variant" tools:text="Apple TV 4K" />
+                        android:includeFontPadding="false" android:textColor="@color/puck_w_c_secondary" tools:text="Apple TV 4K" />
+            <TextView android:visibility="gone" android:id="@+id/w_secondary_sent" android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:textSize="11.5sp" android:maxLines="1" android:ellipsize="end"
+                        android:includeFontPadding="false" android:textColor="@color/puck_w_on_surface" tools:text="Apple TV 4K" />
                 </LinearLayout>
         </LinearLayout>
     </LinearLayout>

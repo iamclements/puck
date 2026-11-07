@@ -8,9 +8,8 @@ import android.widget.RemoteViews
 import dev.danielclements.puck.WidgetLayout.Action
 import dev.danielclements.puck.WidgetRender.applyStatus
 import dev.danielclements.puck.WidgetRender.background
-import dev.danielclements.puck.WidgetRender.color
+import dev.danielclements.puck.WidgetRender.alt
 import dev.danielclements.puck.WidgetRender.show
-import dev.danielclements.puck.WidgetRender.tint
 
 /**
  * The Action button: one tap sends one command (Play/Pause, Wake or Sleep) to
@@ -37,7 +36,7 @@ class ActionWidgetProvider : AppWidgetProvider() {
     }
 
     /** Colours and icon for each command (WIDGET_SPEC.md section 4). */
-    private class Look(val fill: Int, val disc: Int, val icon: Int, val on: Int)
+    private class Look(val fill: Int, val disc: Int, val icon: Int, val mutedIcon: Int, val tile: Int)
 
     companion object {
 
@@ -49,9 +48,9 @@ class ActionWidgetProvider : AppWidgetProvider() {
         }
 
         private fun look(command: WidgetCommand): Look = when (command) {
-            WidgetCommand.WAKE -> Look(R.drawable.w_bg_button, R.drawable.w_disc_button, R.drawable.ic_w_wake, R.color.puck_w_on_button)
-            WidgetCommand.SLEEP -> Look(R.drawable.w_bg_tertiary, R.drawable.w_disc_tertiary, R.drawable.ic_w_sleep, R.color.puck_w_on_tertiary)
-            else -> Look(R.drawable.w_bg_hero, R.drawable.w_disc_hero, R.drawable.ic_w_play_pause, R.color.puck_w_on_hero)
+            WidgetCommand.WAKE -> Look(R.drawable.w_bg_button, R.drawable.w_disc_button, R.drawable.ic_w_wake_button, R.drawable.ic_w_wake_muted, R.layout.widget_action_tile_button)
+            WidgetCommand.SLEEP -> Look(R.drawable.w_bg_tertiary, R.drawable.w_disc_tertiary, R.drawable.ic_w_sleep_tertiary, R.drawable.ic_w_sleep_muted, R.layout.widget_action_tile_tertiary)
+            else -> Look(R.drawable.w_bg_hero, R.drawable.w_disc_hero, R.drawable.ic_w_play_pause_hero, R.drawable.ic_w_play_pause_muted, R.layout.widget_action_tile_hero)
         }
 
         fun update(context: Context, manager: AppWidgetManager, store: CredentialStore, id: Int) {
@@ -77,14 +76,16 @@ class ActionWidgetProvider : AppWidgetProvider() {
             command: WidgetCommand?,
             device: dev.atvremote.protocol.discovery.AppleTvDevice?,
         ): RemoteViews {
+            // The tile has one layout per fill, because its label colour (on hero, on
+            // button, on tertiary) is fixed in the layout. With no command yet the
+            // hero one is used, dimmed.
             val layout = when (size) {
                 Action.MICRO -> R.layout.widget_action_micro
-                Action.TILE -> R.layout.widget_action_tile
+                Action.TILE -> look(command ?: WidgetCommand.PLAY_PAUSE).tile
                 Action.CARD -> R.layout.widget_action_card
             }
             val rv = RemoteViews(context.packageName, layout)
             val configure = WidgetRender.configure(context, id, ActionWidgetConfigActivity::class.java)
-            val muted = color(context, R.color.puck_w_on_surface_variant)
             val roomName = device?.name ?: WidgetBindings.lastName(context, id)
             val card = size == Action.CARD
 
@@ -95,13 +96,13 @@ class ActionWidgetProvider : AppWidgetProvider() {
             rv.show(R.id.w_status_icon, false)
             rv.show(R.id.w_icon, true)
             if (card) rv.background(R.id.w_disc, R.drawable.w_disc_hero)
-            rv.setTextColor(R.id.w_name, color(context, if (card) R.color.puck_w_on_surface else R.color.puck_w_on_hero))
+            rv.alt(R.id.w_name, false)
+            rv.alt(R.id.w_secondary, false)
 
             when {
                 // Ready: bound to a TV that exists, with a command.
                 device != null && command != null -> {
                     val look = look(command)
-                    val onColor = color(context, look.on)
                     if (card) {
                         rv.background(R.id.w_disc, look.disc)
                         rv.setTextViewText(R.id.w_name, context.getString(commandTitle(command)))
@@ -109,10 +110,8 @@ class ActionWidgetProvider : AppWidgetProvider() {
                     } else {
                         rv.background(WidgetRender.ROOT, look.fill)
                         rv.setTextViewText(R.id.w_name, device.name)
-                        rv.setTextColor(R.id.w_name, onColor)
                     }
                     rv.setImageViewResource(R.id.w_icon, look.icon)
-                    rv.tint(R.id.w_icon, onColor)
                     val send = WidgetRender.command(context, id, device.credentialKey, command)
                     rv.setOnClickPendingIntent(WidgetRender.ROOT, send)
                     rv.setContentDescription(WidgetRender.ROOT, context.getString(command.descriptionRes, device.name))
@@ -122,10 +121,9 @@ class ActionWidgetProvider : AppWidgetProvider() {
                 key == null || command == null -> {
                     rv.background(WidgetRender.ROOT, R.drawable.w_bg_card)
                     rv.show(R.id.w_dashed, true)
-                    rv.setImageViewResource(R.id.w_icon, R.drawable.ic_w_add)
-                    rv.tint(R.id.w_icon, muted)
+                    rv.setImageViewResource(R.id.w_icon, R.drawable.ic_w_add_muted)
+                    rv.alt(R.id.w_name) // dimmed, not the command's colour
                     rv.setTextViewText(R.id.w_name, context.getString(if (card) R.string.widget_choose_a_tv else R.string.widget_set_up))
-                    rv.setTextColor(R.id.w_name, color(context, R.color.puck_w_on_surface))
                     rv.applyStatus(context, id, context.getString(R.string.widget_tap_to_set_up))
                     rv.setOnClickPendingIntent(WidgetRender.ROOT, configure)
                     rv.setContentDescription(WidgetRender.ROOT, context.getString(R.string.widget_set_up))
@@ -136,14 +134,13 @@ class ActionWidgetProvider : AppWidgetProvider() {
                     val look = look(command)
                     rv.background(WidgetRender.ROOT, R.drawable.w_bg_card)
                     if (card) rv.background(R.id.w_disc, R.drawable.w_disc_surface)
-                    rv.setImageViewResource(R.id.w_icon, look.icon)
-                    rv.tint(R.id.w_icon, muted)
+                    rv.setImageViewResource(R.id.w_icon, look.mutedIcon)
                     rv.show(R.id.w_badge, true)
                     rv.setTextViewText(R.id.w_name, if (card) context.getString(commandTitle(command)) else roomName ?: context.getString(R.string.widget_action_label))
-                    rv.setTextColor(R.id.w_name, muted)
+                    rv.alt(R.id.w_name)
                     rv.show(R.id.w_progress, false); rv.show(R.id.w_status_icon, false)
                     rv.setTextViewText(R.id.w_secondary, context.getString(R.string.widget_no_longer_paired))
-                    rv.setTextColor(R.id.w_secondary, color(context, R.color.puck_w_error))
+                    rv.alt(R.id.w_secondary)
                     rv.setOnClickPendingIntent(WidgetRender.ROOT, configure)
                     rv.setContentDescription(WidgetRender.ROOT, context.getString(R.string.widget_no_longer_paired))
                 }

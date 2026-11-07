@@ -16,8 +16,6 @@ object WidgetRender {
     /** Id of the root view the launcher clips to its own corner radius. */
     val ROOT = android.R.id.background
 
-    fun color(context: Context, res: Int): Int = context.getColor(res)
-
     /** The widget's current size in dp, from the options the launcher reports. */
     fun sizeOf(manager: AppWidgetManager, id: Int): Pair<Float, Float> {
         val o = manager.getAppWidgetOptions(id)
@@ -87,9 +85,19 @@ object WidgetRender {
 
     // ----------------------------------------------------------- view helpers
 
-    fun RemoteViews.tint(id: Int, color: Int) = setInt(id, "setColorFilter", color)
-
     fun RemoteViews.background(id: Int, drawable: Int) = setInt(id, "setBackgroundResource", drawable)
+
+    /**
+     * Switch a view to its alternate colour.
+     *
+     * The widget layouts colour text and icons with selectors
+     * (res/color/puck_w_c_*) that have a normal and a disabled colour, so the
+     * colour is resolved when the widget is inflated and follows light and dark
+     * and the wallpaper. A colour number set from here would be baked in at
+     * render time and be wrong after either changed, because nothing re-renders
+     * a widget then. `setEnabled` is one of the few methods RemoteViews allows.
+     */
+    fun RemoteViews.alt(id: Int, on: Boolean = true) = setBoolean(id, "setEnabled", !on)
 
     fun RemoteViews.show(id: Int, visible: Boolean) =
         setViewVisibility(id, if (visible) View.VISIBLE else View.GONE)
@@ -98,37 +106,40 @@ object WidgetRender {
      * Put the last tap's outcome in the secondary line, falling back to
      * [normal]. A layout without these views ignores the calls, which is how
      * the compact layouts (no secondary line) opt out.
+     *
+     * "Sent" has its own line (`w_secondary_sent`, on-surface) because the
+     * normal one only has a muted and an error colour.
      */
     fun RemoteViews.applyStatus(context: Context, widgetId: Int, normal: String) {
         val state = WidgetFeedback.get(widgetId)
-        val muted = color(context, R.color.puck_w_on_surface_variant)
+        val sent = state is WidgetFeedback.State.Sent
+        show(R.id.w_secondary, !sent)
+        show(R.id.w_secondary_sent, sent)
+        alt(R.id.w_status_icon, false)
+        alt(R.id.w_secondary, false)
         when (state) {
             null -> {
                 show(R.id.w_progress, false); show(R.id.w_status_icon, false)
                 setTextViewText(R.id.w_secondary, normal)
-                setTextColor(R.id.w_secondary, muted)
             }
             WidgetFeedback.State.Connecting -> {
                 show(R.id.w_progress, true); show(R.id.w_status_icon, false)
                 setTextViewText(R.id.w_secondary, context.getString(R.string.widget_connecting))
-                setTextColor(R.id.w_secondary, muted)
             }
             is WidgetFeedback.State.Sent -> {
                 show(R.id.w_progress, false); show(R.id.w_status_icon, true)
                 setImageViewResource(R.id.w_status_icon, R.drawable.ic_w_check)
-                tint(R.id.w_status_icon, color(context, R.color.puck_w_hero))
                 setTextViewText(
-                    R.id.w_secondary,
+                    R.id.w_secondary_sent,
                     context.getString(R.string.widget_sent, context.getString(state.command.labelRes)),
                 )
-                setTextColor(R.id.w_secondary, color(context, R.color.puck_w_on_surface))
             }
             is WidgetFeedback.State.Failed -> {
                 show(R.id.w_progress, false); show(R.id.w_status_icon, true)
                 setImageViewResource(R.id.w_status_icon, R.drawable.ic_w_alert)
-                tint(R.id.w_status_icon, color(context, R.color.puck_w_error))
+                alt(R.id.w_status_icon)
                 setTextViewText(R.id.w_secondary, context.getString(R.string.widget_cant_reach))
-                setTextColor(R.id.w_secondary, color(context, R.color.puck_w_error))
+                alt(R.id.w_secondary)
             }
         }
     }

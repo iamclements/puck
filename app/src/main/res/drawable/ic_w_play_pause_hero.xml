@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ic_w_play_pause drawn in a theme colour reference, so the colour follows light/dark and the wallpaper. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="@color/puck_w_on_hero" android:pathData="M3,5.5v13l8.5,-6.5z" />
+    <path android:fillColor="@color/puck_w_on_hero" android:pathData="M13.5,5.5h2.6v13h-2.6zM17.9,5.5h2.6v13h-2.6z" />
+</vector>

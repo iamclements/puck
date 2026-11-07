@@ -32,4 +32,29 @@ class WidgetLayoutXmlTest {
         }
         assertTrue("not allowed in a widget: $bad", bad.isEmpty())
     }
+
+    private fun sourceDir(): File =
+        listOf("src/main/kotlin/dev/danielclements/puck", "app/src/main/kotlin/dev/danielclements/puck")
+            .map(::File).first { it.isDirectory }
+
+    /**
+     * A colour number set from code is baked into the widget at render time and
+     * is wrong after a light/dark switch or a wallpaper change, because nothing
+     * re-renders the widget then. Colours come from the layouts' selectors
+     * (res/color/puck_w_c_*), chosen with RemoteViews.mark().
+     */
+    @Test fun widgetCodeSetsNoBakedColours() {
+        val files = sourceDir().listFiles { f ->
+            f.extension == "kt" && (f.name.contains("Widget") && f.name != "WidgetLayout.kt")
+        }!!
+        assertTrue("no widget sources found", files.isNotEmpty())
+        val banned = listOf("setTextColor(", "setColorFilter", ".tint(", "context.getColor(", "ContextCompat.getColor(")
+        val bad = files.flatMap { file ->
+            file.readLines().withIndex().filter { (_, line) ->
+                !line.trimStart().startsWith("*") && !line.trimStart().startsWith("//") &&
+                    banned.any { it in line }
+            }.map { "${file.name}:${it.index + 1}: ${it.value.trim()}" }
+        }
+        assertTrue("baked colours in widget code: $bad", bad.isEmpty())
+    }
 }
