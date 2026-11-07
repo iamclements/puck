@@ -471,7 +471,7 @@ private fun PhoneRemoteContent(
                     },
                     onSelectDown = { vm.selectDown() },
                     onSelectUp = { vm.selectUp() },
-                    onTouch = { x, y, phase -> vm.touch(x, y, phase) },
+                    onTouch = { vm.touch(it) },
                 )
             }
             }
@@ -543,7 +543,7 @@ private fun LandscapeRemoteContent(
                         onSelect = { vm.press(Button.SELECT) },
                         onSelectDown = { vm.selectDown() },
                         onSelectUp = { vm.selectUp() },
-                        onTouch = { x, y, phase -> vm.touch(x, y, phase) },
+                        onTouch = { vm.touch(it) },
                     )
                 }
             }
@@ -600,7 +600,7 @@ private fun BookRemoteContent(
                     onSelect = { vm.press(Button.SELECT) },
                     onSelectDown = { vm.selectDown() },
                     onSelectUp = { vm.selectUp() },
-                    onTouch = { x, y, phase -> vm.touch(x, y, phase) },
+                    onTouch = { vm.touch(it) },
                 )
             }
             Spacer(Modifier.height(14.dp))
@@ -669,7 +669,7 @@ private fun TabletopRemoteContent(
                     onSelect = { vm.press(Button.SELECT) },
                     onSelectDown = { vm.selectDown() },
                     onSelectUp = { vm.selectUp() },
-                    onTouch = { x, y, phase -> vm.touch(x, y, phase) },
+                    onTouch = { vm.touch(it) },
                 )
             }
             TabletopDeck(state, vm, Modifier.width(236.dp).fillMaxHeight())
@@ -1021,7 +1021,7 @@ private fun RemotePad(
     onSelect: () -> Unit,
     onSelectDown: () -> Unit,
     onSelectUp: () -> Unit,
-    onTouch: (x: Int, y: Int, phase: TouchPhase) -> Unit,
+    onTouch: (TrackpadSample) -> Unit,
 ) {
     val tap: (Button) -> Unit = { onDirectionDown(it); onDirectionUp(it) }
     val actions = listOf(
@@ -1218,7 +1218,7 @@ private fun TouchPad(
     onSelect: () -> Unit,
     onSelectDown: () -> Unit,
     onSelectUp: () -> Unit,
-    onTouch: (x: Int, y: Int, phase: TouchPhase) -> Unit,
+    onTouch: (TrackpadSample) -> Unit,
     a11yActions: List<CustomAccessibilityAction>,
 ) {
     val feedback = rememberFeedback(hapticsEnabled, soundEnabled)
@@ -1254,7 +1254,6 @@ private fun TouchPad(
                 )
                 .clip(RoundedCornerShape(PAD_CORNER))
                 .pointerInput(Unit) {
-                    val centre = 500f
                     // Frac is measured against a fixed reference pad — the size
                     // the sensitivity curve was tuned on — not against this
                     // surface. The surface changes shape with the layout, and a
@@ -1326,8 +1325,10 @@ private fun TouchPad(
                         var holdSelect = false
                         var upPos = start
 
-                        var vx = centre
-                        var vy = centre
+                        // Where the drag first committed, which says which way the
+                        // stroke is heading and so which edge it should start from.
+                        var commitDelta = Offset.Zero
+                        val pad = VirtualTrackpad()
                         var lastPos = start
                         var lastTime = down.uptimeMillis
 
@@ -1337,13 +1338,14 @@ private fun TouchPad(
                             val fracY = (pos.y - lastPos.y) / refPx
                             val speed = hypot(fracX, fracY) / dt
                             val gain = TouchAcceleration.gain(speed)
-                            vx = (vx + fracX * 1000f * gain * HORIZONTAL_SENSITIVITY * sensitivity)
-                                .coerceIn(0f, 1000f)
-                            vy = (vy + fracY * 1000f * gain * VERTICAL_SENSITIVITY * sensitivity)
-                                .coerceIn(0f, 1000f)
+                            // Unbounded: VirtualTrackpad wraps the virtual finger at
+                            // the surface edges instead of clamping it there.
+                            pad.move(
+                                fracX * 1000f * gain * HORIZONTAL_SENSITIVITY * sensitivity,
+                                fracY * 1000f * gain * VERTICAL_SENSITIVITY * sensitivity,
+                            ).forEach(onTouch)
                             lastPos = pos
                             lastTime = time
-                            onTouch(vx.toInt(), vy.toInt(), TouchPhase.HOLD)
                             // Drawing only: the live finger dot and its short trail.
                             touchPoint = pos
                             touchTrail = (touchTrail + pos).takeLast(8)
@@ -1357,7 +1359,7 @@ private fun TouchPad(
                                     val event = awaitPointerEvent()
                                     val change = event.changes.firstOrNull { it.id == down.id } ?: break
                                     if (change.changedToUp()) { tap = true; upPos = change.position; break }
-                                    if ((change.position - start).getDistance() > CENTRE_COMMIT_DP.dp.toPx()) { drag = true; break }
+                                    if ((change.position - start).getDistance() > CENTRE_COMMIT_DP.dp.toPx()) { drag = true; commitDelta = change.position - start; break }
                                     change.consume()
                                 }
                                 true
@@ -1382,14 +1384,14 @@ private fun TouchPad(
                                 val event = awaitPointerEvent()
                                 val change = event.changes.firstOrNull { it.id == down.id } ?: break
                                 if (change.changedToUp()) { tap = true; upPos = change.position; break }
-                                if ((change.position - start).getDistance() > RIM_COMMIT_DP.dp.toPx()) { drag = true; break }
+                                if ((change.position - start).getDistance() > RIM_COMMIT_DP.dp.toPx()) { drag = true; commitDelta = change.position - start; break }
                                 change.consume()
                             }
                         }
 
                         if (drag) {
                             if (rimDirection != null) onDirectionUp(rimDirection)
-                            onTouch(500, 500, TouchPhase.PRESS)
+                            pad.begin(commitDelta.x, commitDelta.y).forEach(onTouch)
                             while (true) {
                                 val event = awaitPointerEvent()
                                 val change = event.changes.firstOrNull { it.id == down.id } ?: break
@@ -1397,7 +1399,7 @@ private fun TouchPad(
                                 if (change.changedToUp()) break
                                 change.consume()
                             }
-                            onTouch(vx.toInt(), vy.toInt(), TouchPhase.RELEASE)
+                            pad.end().forEach(onTouch)
                             touchPoint = null
                             touchTrail = emptyList()
                         } else {

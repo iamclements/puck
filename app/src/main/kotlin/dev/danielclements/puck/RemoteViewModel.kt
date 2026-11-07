@@ -162,7 +162,7 @@ class RemoteViewModel(
     // Touch samples for the pad. Declared ahead of init: the drain coroutine
     // starts there, and a property read before its declaration line would be
     // null — the intermittent startup crash.
-    private val touchInput = Channel<TouchSample>(Channel.UNLIMITED)
+    private val touchInput = Channel<TrackpadSample>(Channel.UNLIMITED)
 
     private val _state = MutableStateFlow(UiState(settings = settingsStore.load()))
     val state: StateFlow<UiState> = _state.asStateFlow()
@@ -889,10 +889,8 @@ class RemoteViewModel(
 
     // -------------------------------------------------- touch-surface stream
 
-    private data class TouchSample(val x: Int, val y: Int, val phase: TouchPhase)
-
-    fun touch(x: Int, y: Int, phase: TouchPhase) {
-        touchInput.trySend(TouchSample(x, y, phase))
+    fun touch(sample: TrackpadSample) {
+        touchInput.trySend(sample)
     }
 
     /**
@@ -906,7 +904,10 @@ class RemoteViewModel(
         netScope.launch {
             var lastHoldNanos = 0L
             for (sample in touchInput) {
-                if (sample.phase == TouchPhase.HOLD) {
+                // A deliberate pause (the finger resting before a re-anchor lift)
+                // is honoured as-is and exempt from the throttle below.
+                if (sample.delayMs > 0) delay(sample.delayMs)
+                else if (sample.phase == TouchPhase.HOLD) {
                     val now = System.nanoTime()
                     if (now - lastHoldNanos < 12_000_000L) continue
                     lastHoldNanos = now
