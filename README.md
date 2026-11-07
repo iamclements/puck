@@ -139,6 +139,9 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.
 pull request. `./gradlew :app:lintDebug` also runs in CI and is worth a local
 run before pushing.
 
+Open pull requests against the `dev` branch; `main` is production. How a change
+reaches a release is in [docs/RELEASING.md](docs/RELEASING.md).
+
 ## Credits
 
 Puck is a fork of [**Remote for Apple
