@@ -43,6 +43,12 @@ object LocalNetwork {
         started = true
         cm = context.applicationContext.getSystemService(ConnectivityManager::class.java)
 
+        // Seeded so the first callback does not see "default is not local" and
+        // bind for an instant before the default-network callback corrects it.
+        defaultIsLocal = runCatching {
+            isLocal(cm.getNetworkCapabilities(cm.activeNetwork))
+        }.getOrDefault(false)
+
         val localRequest = NetworkRequest.Builder()
             .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
             .addTransportType(NetworkCapabilities.TRANSPORT_ETHERNET)
@@ -71,7 +77,11 @@ object LocalNetwork {
     private fun update(change: () -> Unit) {
         change()
         runCatching {
-            when (decide(defaultIsLocal, local != null, bound)) {
+            val action = decide(defaultIsLocal, local != null, bound)
+            if (action != Action.LEAVE) {
+                android.util.Log.i("atv", "LocalNetwork: $action (defaultIsLocal=$defaultIsLocal, local=$local)")
+            }
+            when (action) {
                 Action.BIND -> { cm.bindProcessToNetwork(local); bound = true }
                 Action.UNBIND -> { cm.bindProcessToNetwork(null); bound = false }
                 Action.LEAVE -> Unit
