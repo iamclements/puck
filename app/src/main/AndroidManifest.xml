@@ -4,6 +4,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!--
+      Android 17 gates traffic to devices on the local network behind this
+      permission (enforced for apps targeting 37; asked for up front so the
+      remote keeps working when the target is raised).
+    -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <!-- Required from Android 13 for local network service discovery. -->
     <uses-permission
         android:name="android.permission.NEARBY_WIFI_DEVICES"

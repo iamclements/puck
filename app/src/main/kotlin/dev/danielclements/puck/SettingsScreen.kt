@@ -26,6 +26,9 @@ import androidx.compose.ui.platform.LocalContext
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.provider.Settings
+import androidx.core.app.NotificationManagerCompat
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -248,6 +251,21 @@ fun SettingsScreen(state: UiState, vm: RemoteViewModel) {
                 .padding(6.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+                LinkRow(
+                    icon = Icons.Default.Notifications,
+                    title = stringResource(R.string.settings_notifications_off),
+                    subtitle = stringResource(R.string.settings_notifications_off_desc),
+                ) {
+                    runCatching {
+                        context.startActivity(
+                            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                        )
+                    }
+                }
+            }
             LinkRow(
                 icon = Icons.Default.BugReport,
                 title = stringResource(R.string.settings_report),
