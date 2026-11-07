@@ -1,16 +1,36 @@
 name: Release
 
+# Production: pushing a vMAJOR.MINOR.PATCH tag cut from main.
+#
+# The "prod" environment can require a manual approval (Settings ->
+# Environments -> prod -> Required reviewers), so the signed build and the
+# publish step wait for a human after the checks have passed.
+
 on:
   push:
     tags:
-      - 'v*'
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 permissions:
   contents: write
 
 jobs:
-  release:
+  verify:
+    name: Verify tag
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # needs main's history and the previous tag
+      - name: Check the tag is releasable
+        run: python3 tools/check_release.py
+        env:
+          TAG: ${{ github.ref_name }}
+
+  release:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: prod
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,6 +47,9 @@ jobs:
 
       - name: Protocol conformance tests
         run: ./gradlew :protocol:test
+
+      - name: App unit tests
+        run: ./gradlew :app:testDebugUnitTest
 
       - name: Decode signing keystore
         run: echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > app/release.jks
@@ -46,8 +69,10 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
-      - name: Build signed release APK
-        run: ./gradlew :app:assembleRelease
+      # The APK is for GitHub and sideloading; the bundle is what Google Play
+      # takes. Both are signed with the same upload key.
+      - name: Build signed release APK and bundle
+        run: ./gradlew :app:assembleRelease :app:bundleRelease
 
       - name: Clean up signing material
         if: always()
@@ -62,6 +87,22 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: app/build/outputs/apk/release/puck-*.apk
+          files: |
+            app/build/outputs/apk/release/puck-*.apk
+            app/build/outputs/bundle/release/app-release.aab
           body_path: RELEASE_NOTES.md
           draft: false
+
+      # Opt-in: set the repository variable PLAY_UPLOAD=true and the secret
+      # PLAY_SERVICE_ACCOUNT_JSON once the app exists in Play Console. The
+      # bundle lands on the *internal* track; promoting it to production stays
+      # a deliberate click in Play Console.
+      - name: Upload to Google Play (internal track)
+        if: vars.PLAY_UPLOAD == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: dev.danielclements.puck
+          releaseFiles: app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed

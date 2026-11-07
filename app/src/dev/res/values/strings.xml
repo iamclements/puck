@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Distinguishes the dev build's launcher label from the real app. -->
+    <string name="app_name">Puck Dev</string>
+</resources>

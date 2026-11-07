@@ -3,7 +3,8 @@
 # This file is NOT consumed by anything in this repo or its CI — F-Droid
 # builds apps from a recipe living in their own fdroiddata repository, built
 # independently on their own infrastructure from a tagged commit, never from
-# an APK we upload. Submitting means opening a merge request against
+# an APK we upload. Releases are cut by tagging main (see docs/RELEASING.md), and F-Droid
+# follows only those vX.Y.Z tags. Submitting means opening a merge request against
 # https://gitlab.com/fdroid/fdroiddata adding a file at this same path
 # (metadata/dev.danielclements.puck.yml). This draft is kept here so that
 # step is "copy this file in and open an MR" rather than starting from
@@ -62,6 +63,7 @@ Builds:
       - yes
 
 AutoUpdateMode: Version
-UpdateCheckMode: Tags
+# Release tags only; dev pre-releases are tagged dev-N and must not be built.
+UpdateCheckMode: Tags ^v[0-9]+\.[0-9]+\.[0-9]+$
 CurrentVersion: '1.4.1'
 CurrentVersionCode: 7

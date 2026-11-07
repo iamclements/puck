@@ -28,3 +28,17 @@ how the shipped drawable gets visually verified.
 ```bash
 python tools/generate_icon.py
 ```
+
+## Release tooling
+
+Used by the GitHub workflows; both can be run locally.
+
+- `check_release.py` guards a production tag before anything is built: it must
+  be `vX.Y.Z`, on `main`, equal to `versionName`, with a higher `versionCode`
+  than the previous release. `TAG=v1.4.2 python3 tools/check_release.py`
+- `release_notes.py` builds a GitHub release body from Conventional Commits
+  since the previous `v*` tag (dev pre-release tags are ignored). It reads the
+  `TAG` and `REPO` environment variables.
+
+See [`docs/RELEASING.md`](../docs/RELEASING.md) for how they fit the pipeline.
+

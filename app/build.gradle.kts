@@ -61,6 +61,18 @@ android {
             buildConfigField("boolean", "WIRE_LOGGING", "false")
             signingConfig = signingConfigs.findByName("release")
         }
+        // The "dev" environment: a release-identical (minified) build that
+        // installs beside the production app, so a build from the dev branch can
+        // be tried on a phone that also has the real thing. Signed with the
+        // release key when CI has it, the debug key otherwise (forks).
+        create("dev") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+            signingConfig = signingConfigs.findByName("release")
+                ?: signingConfigs.getByName("debug")
+            matchingFallbacks += "release"
+        }
         debug {
             isMinifyEnabled = false
             buildConfigField("boolean", "WIRE_LOGGING", wireLogging)
@@ -108,8 +120,19 @@ kotlin {
 // outputFileName is only settable on the impl class; the public
 // VariantOutput interface exposes it read-only.
 androidComponents {
+    // CI passes -PciRun=<run number> for dev builds so each is a distinct,
+    // upgradeable install: dev's applicationId is its own, so its versionCode
+    // does not have to stay in step with the Play/F-Droid release.
+    val ciRun = providers.gradleProperty("ciRun").orNull?.toIntOrNull()
     onVariants { variant ->
-        val suffix = if (variant.buildType == "debug") "-debug" else ""
+        val suffix = when (variant.buildType) {
+            "debug" -> "-debug"
+            "dev" -> "-dev" + (ciRun?.let { ".$it" } ?: "")
+            else -> ""
+        }
+        if (variant.buildType == "dev" && ciRun != null) {
+            variant.outputs.forEach { it.versionCode.set(ciRun) }
+        }
         variant.outputs.forEach { output ->
             (output as? com.android.build.api.variant.impl.VariantOutputImpl)
                 ?.outputFileName?.set("puck-${android.defaultConfig.versionName}$suffix.apk")
