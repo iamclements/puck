@@ -192,4 +192,11 @@
     <string name="notif_channel_keyboard_desc">Offers the keyboard when the Apple TV asks for text</string>
     <string name="notif_channel_nowplaying">Now playing</string>
     <string name="notif_channel_nowplaying_desc">Controls for what the Apple TV is playing</string>
+
+    <string name="perm_title">Before you start</string>
+    <string name="perm_body">Puck would like to show notifications so you get media controls and a reply box for typing on your TV, even from the lock screen. On newer Android versions it may also ask to find devices on your local network, which is how it reaches your Apple TV. Nothing leaves your Wi-Fi.</string>
+    <string name="perm_continue">Continue</string>
+    <string name="perm_skip">Not now</string>
+    <string name="settings_notifications_off">Notifications are off</string>
+    <string name="settings_notifications_off_desc">Turn them on for media controls and the lock-screen keyboard.</string>
 </resources>

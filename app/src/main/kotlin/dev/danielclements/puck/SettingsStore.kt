@@ -58,6 +58,11 @@ class SettingsStore(context: Context) {
 
     fun setPadHintSeen() = prefs.edit().putBoolean(KEY_PAD_HINT_SEEN, true).apply()
 
+    /** Whether the up-front "why these permissions" dialog has been shown. */
+    fun permissionsExplained(): Boolean = prefs.getBoolean(KEY_PERMS_EXPLAINED, false)
+
+    fun setPermissionsExplained() = prefs.edit().putBoolean(KEY_PERMS_EXPLAINED, true).apply()
+
     fun setControlsSide(value: ControlsSide) =
         prefs.edit().putString(KEY_CONTROLS_SIDE, value.name).apply()
 
@@ -68,5 +73,6 @@ class SettingsStore(context: Context) {
         private const val KEY_REMOTE_STYLE = "remote_style"
         private const val KEY_CONTROLS_SIDE = "controls_side"
         private const val KEY_PAD_HINT_SEEN = "pad_hint_seen"
+        private const val KEY_PERMS_EXPLAINED = "permissions_explained"
     }
 }

@@ -49,6 +49,7 @@ collects anything about you or how you use the app.
 | Permission | Why |
 |---|---|
 | Internet, network/Wi-Fi state | Talk to your Apple TV on the local network, and the one iTunes lookup above |
+| Local network (Android 17+) | Lets Puck reach your Apple TV on your Wi-Fi; no location access |
 | Notifications | The now-playing media notification and the keyboard reply prompt |
 | Foreground service (media playback) | Keeps the connection to your Apple TV alive while the now-playing notification is shown |
 

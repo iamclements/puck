@@ -5,6 +5,12 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <!--
+      Android 17 gates traffic to devices on the local network behind this
+      permission (enforced for apps targeting 37; asked for up front so the
+      remote keeps working when the target is raised).
+    -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+    <!--
       Wi-Fi is what the app normally uses, but nothing here hard-requires the
       radio: a tablet or Chromebook on Ethernet can still reach an Apple TV,
       and Play would otherwise hide the app from it.
