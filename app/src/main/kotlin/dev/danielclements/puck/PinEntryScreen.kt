@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -63,6 +64,10 @@ fun PinEntryScreen(device: AppleTvDevice, state: UiState, vm: RemoteViewModel) {
     val c = Puck.colors
 
     LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
+
+    // Back is Cancel: otherwise it would leave the app with a pairing session
+    // still open and the PIN still showing on the TV.
+    BackHandler(enabled = !state.busy) { vm.cancelPairing() }
 
     Column(
         modifier = Modifier
