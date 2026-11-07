@@ -58,13 +58,17 @@ now-playing tunnel, and the module layout.
 
 | Source | Status |
 |---|---|
-| [GitHub Releases](../../releases) | ✅ Signed APK, available now |
+| [GitHub Releases](../../releases/latest) | ✅ Signed APK, available now |
 | Google Play | 🚧 Coming soon |
 | F-Droid | 🚧 Submission pending a tagged release — recipe ready at [`docs/fdroid/`](docs/fdroid/) |
 
 Requires **Android 8.0 (API 26)** or newer, on the same Wi-Fi network as the
 Apple TV. Installing the GitHub release needs "allow installation from unknown
 sources" since it isn't yet on a store.
+
+Pre-release builds named `dev-N` on the [Releases page](../../releases) are
+test builds of the `dev` branch. They install as a separate app, **Puck Dev**,
+next to the real one, and are not meant for everyday use.
 
 ## Pairing
 
@@ -116,9 +120,16 @@ Android SDK with platform 36.
 
 ```bash
 ./gradlew :app:assembleDebug      # installable debug APK
-./gradlew :app:assembleRelease    # minified, ~3 MB
+./gradlew :app:assembleDev        # minified, installs beside the real app as "Puck Dev"
+./gradlew :app:assembleRelease    # minified, ~3 MB; signed only if keystore.properties exists
 ./gradlew :protocol:test          # conformance tests
+./gradlew :app:testDebugUnitTest  # app unit tests
+./gradlew :app:lintDebug          # Android Lint
 ```
+
+The release and dev builds are signed with the key in `keystore.properties`
+(gitignored) when it exists; without it a release build is left unsigned and a
+dev build falls back to the debug key, so a fresh clone builds either way.
 
 A `cli/` module exists for exercising the protocol from a terminal without a
 phone — see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#correctness) for
@@ -129,7 +140,8 @@ details.
 Contributions are welcome — especially **compatibility reports** for models
 and tvOS versions other than the one tested.
 
-Please run `./gradlew :protocol:test` before opening a pull request. If you
+Please run `./gradlew :protocol:test :app:testDebugUnitTest` before opening a
+pull request. If you
 change protocol behaviour, add a conformance vector rather than only a
 round-trip test: self-consistency proves nothing about what a real device
 accepts.
@@ -139,8 +151,11 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.
 pull request. `./gradlew :app:lintDebug` also runs in CI and is worth a local
 run before pushing.
 
-Open pull requests against the `dev` branch; `main` is production. How a change
-reaches a release is in [docs/RELEASING.md](docs/RELEASING.md).
+There are two long-lived branches: **`dev`** is where work lands and is tested
+(every push builds a *Puck Dev* pre-release), and **`main`** is production, only
+ever updated from `dev` and tagged for release. **Open pull requests against
+`dev`.** The full flow, including how a release is cut, is in
+[docs/RELEASING.md](docs/RELEASING.md).
 
 ## Credits
 

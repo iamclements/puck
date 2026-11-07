@@ -24,7 +24,7 @@ feature branch ──PR──▶ dev ──(test the dev APK on a phone)──PR
 1. Branch from `dev`, open a PR **into `dev`**. CI runs tests, lint, a debug
    build, a minified build, and commitlint on the PR.
 2. Merge. CI publishes a `dev-N` pre-release (the ten newest are kept). Install
-   the APK from the [Releases page](../../../releases) and try it.
+   the APK from the [Releases page](https://github.com/iamclements/puck/releases) and try it.
 3. When `dev` is good, open a PR `dev` → `main` (a merge commit or squash, as
    you prefer). CI runs again.
 4. To release, bump `versionName` and `versionCode` in `app/build.gradle.kts`
