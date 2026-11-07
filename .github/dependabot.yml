@@ -1,9 +1,17 @@
+# Dependency updates are proposed against dev, like every other change, so they
+# are tried in a dev build before they can reach main.
+#
+# The commit prefix keeps the titles inside the Conventional Commits format that
+# commitlint enforces on pull requests.
 version: 2
 updates:
   - package-ecosystem: gradle
     directory: /
+    target-branch: dev
     schedule:
       interval: weekly
+    commit-message:
+      prefix: "chore(deps)"
     groups:
       androidx:
         patterns:
@@ -14,5 +22,8 @@ updates:
 
   - package-ecosystem: github-actions
     directory: /
+    target-branch: dev
     schedule:
       interval: weekly
+    commit-message:
+      prefix: "ci(deps)"

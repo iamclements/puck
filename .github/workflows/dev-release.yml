@@ -1,0 +1,116 @@
+name: Dev release
+
+# A dev build is cut on demand, not on every merge: push a dev-N tag from the
+# tip of dev (tools/tag_dev.sh does it). It publishes a GitHub pre-release of
+# "Puck Dev" (dev.danielclements.puck.dev), which installs beside the real app.
+#
+# Triggered by a tag rather than a button so that it works while this file is
+# only on dev: a workflow_dispatch workflow has to be on the default branch
+# (main) before GitHub will offer it.
+
+on:
+  push:
+    tags:
+      - 'dev-[0-9]*'
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    name: Verify tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # A dev build must come from dev: a tag on a stray branch, or on main
+      # (which is released with a vX.Y.Z tag instead), is a mistake.
+      - name: Check the tag is on dev
+        run: |
+          git fetch --no-tags origin dev
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/dev; then
+            echo "::error::$GITHUB_REF_NAME is not on dev. Tag the tip of dev."
+            exit 1
+          fi
+
+  release:
+    name: Publish dev pre-release
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # release notes need the previous dev tag's history
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # A tag is cheap to push by mistake; do not publish a build that fails.
+      - name: Protocol and app tests
+        run: ./gradlew :protocol:test :app:testDebugUnitTest
+
+      # Signed with the release key when this repo has it, so a dev build can
+      # be installed over the previous one. Without it (a fork) the build falls
+      # back to the debug key and still works.
+      - name: Decode signing keystore
+        if: env.HAS_KEYSTORE == 'true'
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > app/release.jks
+          cat > keystore.properties <<EOF
+          storeFile=release.jks
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      # The build number is the tag's own, so dev-46 is always versionCode 46
+      # and each new tag upgrades the last.
+      - name: Build dev APK
+        run: ./gradlew :app:assembleDev -PciRun="${GITHUB_REF_NAME#dev-}"
+
+      - name: Clean up signing material
+        if: always()
+        run: rm -f app/release.jks keystore.properties
+
+      - name: Build release notes since the previous dev build
+        env:
+          TAG: ${{ github.ref_name }}
+          TAG_MATCH: 'dev-*'
+          REPO: ${{ github.repository }}
+        run: python3 tools/release_notes.py
+
+      - name: Publish pre-release
+        run: |
+          {
+            echo "> **Pre-release test build of \`dev\`** at \`${GITHUB_SHA:0:7}\`. Installs as **Puck Dev**"
+            echo "> (\`dev.danielclements.puck.dev\`) beside the real app. Not for everyday use."
+            echo
+            cat RELEASE_NOTES.md
+          } > DEV_NOTES.md
+          gh release create "$GITHUB_REF_NAME" app/build/outputs/apk/dev/puck-*.apk \
+            --verify-tag --prerelease --latest=false \
+            --title "Dev build ${GITHUB_REF_NAME#dev-}" \
+            --notes-file DEV_NOTES.md
+
+      # Keep the release list readable: only the ten newest dev builds stay.
+      - name: Prune old dev pre-releases
+        run: |
+          gh release list --limit 200 --json tagName \
+            --jq '[.[].tagName | select(startswith("dev-"))] | sort_by(ltrimstr("dev-") | tonumber) | reverse | .[10:] | .[]' |
+            xargs -r -n1 gh release delete --cleanup-tag --yes
