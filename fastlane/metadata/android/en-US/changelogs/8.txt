@@ -1,0 +1,1 @@
+Adds three home-screen widgets: Room, Rooms and a one-tap Action button for Play/Pause, Wake or Sleep. There is now a Quick Settings tile for each saved Apple TV, long trackpad swipes carry further, and Macs and other non-Apple TV devices are hidden from the device list unless you ask for them.
