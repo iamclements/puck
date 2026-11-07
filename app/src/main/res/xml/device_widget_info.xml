@@ -7,10 +7,10 @@
     android:targetCellWidth="1"
     android:targetCellHeight="1"
     android:updatePeriodMillis="0"
-    android:initialLayout="@layout/widget_device"
-    android:previewLayout="@layout/widget_device_preview"
+    android:initialLayout="@layout/widget_room_tile"
+    android:previewLayout="@layout/widget_room_preview"
     android:configure="dev.danielclements.puck.DeviceWidgetConfigActivity"
-    android:description="@string/widget_description"
+    android:description="@string/widget_room_description"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
-    android:widgetFeatures="reconfigurable" />
+    android:widgetFeatures="reconfigurable|configuration_optional" />

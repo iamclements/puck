@@ -367,7 +367,7 @@ class RemoteViewModel(
         store.setDisplayName(device.credentialKey, trimmed)
         AppShortcuts.sync(getApplication(), store)
         QuickTiles.sync(getApplication(), store)
-        DeviceWidgetProvider.refreshAll(getApplication())
+        WidgetRefresh.all(getApplication())
         refreshManagedDevices()
         _state.update { s ->
             s.copy(devices = s.devices.map { if (it.credentialKey == device.credentialKey) it.copy(name = trimmed) else it })
@@ -664,7 +664,7 @@ class RemoteViewModel(
         // Otherwise a widget pinned to this device keeps showing it, and
         // keeps launching straight into it, indefinitely — nothing else
         // about the widget lifecycle would ever notice it was forgotten.
-        DeviceWidgetProvider.refreshAll(getApplication())
+        WidgetRefresh.all(getApplication())
     }
 
     private fun str(id: Int, vararg args: Any?): String =
@@ -721,7 +721,7 @@ class RemoteViewModel(
                 // (or the stale-binding "tap to configure" placeholder, if
                 // it predates this re-pairing) — refresh it now that the
                 // metadata backing it has changed.
-                DeviceWidgetProvider.refreshAll(getApplication())
+                WidgetRefresh.all(getApplication())
                 // Now-playing must come up on every connect. Previously this
                 // only ran straight after AirPlay pairing, so it silently
                 // stopped working on the next app start.

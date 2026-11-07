@@ -42,6 +42,12 @@ class DeviceWidgetConfigActivity : ComponentActivity() {
         val store = CredentialStore(this)
         val devices = store.pairedKeys().mapNotNull { store.loadDevice(it) }
 
+        // One TV leaves nothing to choose.
+        devices.singleOrNull()?.let {
+            finishWithDevice(store, it)
+            return
+        }
+
         setContent {
             PuckTheme {
                 Surface(Modifier.fillMaxSize()) {
@@ -57,7 +63,7 @@ class DeviceWidgetConfigActivity : ComponentActivity() {
 
     private fun finishWithDevice(store: CredentialStore, device: dev.atvremote.protocol.discovery.AppleTvDevice) {
         WidgetBindings.bind(this, appWidgetId, device.credentialKey)
-        DeviceWidgetProvider.updateWidget(this, AppWidgetManager.getInstance(this), store, appWidgetId)
+        DeviceWidgetProvider.update(this, AppWidgetManager.getInstance(this), store, appWidgetId)
         setResult(Activity.RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))
         finish()
     }

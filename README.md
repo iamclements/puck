@@ -46,8 +46,12 @@ talking straight to your Apple TV over the LAN.
   reply field when the TV asks for text while your phone is locked.
 - **Now playing** — artwork, a draggable scrubber, skips and volume, backed by
   a full media notification and lock-screen controls.
-- **Home-screen widget, Quick Settings tiles, and launcher shortcuts** — jump
-  straight into a specific Apple TV without opening the app first.
+- **Home-screen widgets, Quick Settings tiles, and launcher shortcuts** — jump
+  straight into a specific Apple TV without opening the app first. Three
+  widgets: *Room* (one TV, resizable up to a panel with Play/Pause, Sleep and
+  volume), *Rooms* (all your TVs, offered once you have two) and an *Action
+  button* (Play/Pause, Wake or Sleep in one tap). Specs in
+  [`docs/WIDGET_SPEC.md`](docs/WIDGET_SPEC.md).
 - **Material You** dynamic colour on Android 12+.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for how the protocol layer

@@ -1,7 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Dynamic (API 31+): follows the wallpaper the same way the in-app dynamic
-     color scheme does — DESIGN_SPEC.md §9. -->
+<!-- Widget colour tokens, WIDGET_SPEC.md section 1.1. -->
+<!-- Dynamic, light (Android 12+): follows the wallpaper. -->
 <resources>
-    <color name="puck_widget_tile">@android:color/system_accent1_700</color>
-    <color name="puck_widget_glyph">@android:color/system_accent1_100</color>
+    <color name="puck_w_surface">@android:color/system_neutral1_50</color>
+    <color name="puck_w_on_surface">@android:color/system_neutral1_900</color>
+    <color name="puck_w_on_surface_variant">@android:color/system_neutral2_700</color>
+    <color name="puck_w_outline">@android:color/system_neutral2_200</color>
+    <color name="puck_w_tile">@android:color/system_accent1_100</color>
+    <color name="puck_w_glyph">@android:color/system_accent1_700</color>
+    <color name="puck_w_hero">@android:color/system_accent1_600</color>
+    <color name="puck_w_on_hero">@android:color/system_accent1_0</color>
+    <color name="puck_w_button">@android:color/system_accent2_100</color>
+    <color name="puck_w_on_button">@android:color/system_accent2_900</color>
+    <color name="puck_w_tertiary">@android:color/system_accent3_100</color>
+    <color name="puck_w_on_tertiary">@android:color/system_accent3_900</color>
+    <color name="puck_w_error">#FFBA1A1A</color>
+    <color name="puck_w_on_error">#FFFFFFFF</color>
 </resources>

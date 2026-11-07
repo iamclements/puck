@@ -139,6 +139,18 @@ class CredentialStore(context: Context) {
         return if (override == device.name) device else device.copy(name = override)
     }
 
+    /** When this TV was last connected to, or 0 if it never has been. */
+    fun lastUsedAt(key: String): Long = prefs.getLong("meta-$key-usedAt", 0L)
+
+    /**
+     * Every paired TV, most recently used first, then by name. Unlike
+     * [recentDevices] this includes TVs that were paired but never connected to.
+     */
+    fun pairedDevicesByRecency(): List<AppleTvDevice> = pairedKeys()
+        .mapNotNull { key -> loadDevice(key)?.let { it to lastUsedAt(key) } }
+        .sortedWith(compareByDescending<Pair<AppleTvDevice, Long>> { it.second }.thenBy { it.first.name })
+        .map { it.first }
+
     /** Paired devices ordered by most recently connected to, for shortcuts. */
     fun recentDevices(limit: Int): List<AppleTvDevice> = pairedKeys()
         .mapNotNull { key -> prefs.getLong("meta-$key-usedAt", 0L).takeIf { it > 0 }?.let { key to it } }

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Picker preview of the Action button. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools"  android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/w_bg_hero" android:orientation="vertical" android:gravity="center"
+    android:paddingTop="8dp" android:paddingStart="6dp" android:paddingEnd="6dp" android:paddingBottom="7dp">
+    <FrameLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <ImageView android:id="@+id/w_icon" android:layout_width="28dp" android:layout_height="28dp"
+            android:src="@drawable/ic_w_play_pause" android:tint="@color/puck_w_on_hero" android:importantForAccessibility="no" />
+        <ImageView android:id="@+id/w_dashed" android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/w_ring_dashed"
+            android:visibility="gone" android:importantForAccessibility="no" />
+        <TextView android:id="@+id/w_badge" android:layout_width="16dp" android:layout_height="16dp" android:layout_gravity="top|end"
+            android:layout_marginTop="-4dp" android:layout_marginEnd="-5dp" android:background="@drawable/w_badge" android:gravity="center" android:text="!"
+            android:textSize="11sp" android:textStyle="bold" android:includeFontPadding="false" android:textColor="@color/puck_w_on_error"
+            android:visibility="gone" android:importantForAccessibility="no" />
+    </FrameLayout>
+    <FrameLayout android:layout_width="match_parent" android:layout_height="6dp" />
+    <TextView android:id="@+id/w_name" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium" android:textSize="11sp" android:maxLines="2" android:ellipsize="end"
+                android:includeFontPadding="false" android:gravity="center" android:textColor="@color/puck_w_on_hero"  android:text="@string/widget_preview_name" />
+</LinearLayout>

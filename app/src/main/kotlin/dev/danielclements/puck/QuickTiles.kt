@@ -33,6 +33,7 @@ object QuickTiles {
     fun visibleCount(savedDevices: Int): Int = savedDevices.coerceIn(1, SLOTS)
 
     fun sync(context: Context, store: CredentialStore) {
+        WidgetAvailability.sync(context, store)
         val wanted = visibleCount(store.pairedKeys().size)
         val pm = context.packageManager
         services.forEachIndexed { slot, service ->
