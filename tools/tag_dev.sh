@@ -5,7 +5,7 @@
 #   tools/tag_dev.sh          # tag and push
 #   tools/tag_dev.sh --dry    # say what it would do
 #
-# N is one more than the highest existing dev-N. Refuses unless you are on dev,
+# N is one more than the highest existing dev-N (and never below 57). Refuses unless you are on dev,
 # the tree is clean, and your dev is exactly origin/dev, so what gets built is
 # what was reviewed and merged.
 set -euo pipefail
@@ -20,8 +20,14 @@ branch=$(git rev-parse --abbrev-ref HEAD)
 git fetch --quiet --tags origin
 [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/dev)" ] || { echo "dev is not at origin/dev; pull or push first." >&2; exit 1; }
 
+# Dev builds from before the tag-based flow went up to dev-56. The number is the
+# dev app's versionCode, and Android refuses to install a lower one over a higher
+# one, so never go back below it even if every dev tag has been deleted.
+FLOOR=56
 last=$(git tag -l 'dev-[0-9]*' | sed 's/^dev-//' | sort -n | tail -1)
-next=$(( ${last:-0} + 1 ))
+last=${last:-0}
+[ "$last" -lt "$FLOOR" ] && last=$FLOOR
+next=$(( last + 1 ))
 tag="dev-$next"
 
 echo "Tagging $(git rev-parse --short HEAD) as $tag"

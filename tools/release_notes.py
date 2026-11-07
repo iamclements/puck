@@ -46,10 +46,15 @@ def previous_tag(tag: str) -> str | None:
     # Production notes compare against the last release, dev notes against the
     # last dev build; the two kinds of tag must not see each other.
     match = os.environ.get("TAG_MATCH", "v*")
-    try:
-        return git("describe", "--tags", "--abbrev=0", "--match", match, f"{tag}^")
-    except subprocess.CalledProcessError:
-        return None
+    # The first dev build has no earlier dev build to compare with; fall back to
+    # the last release so its notes are "what changed since v1.x", not the whole
+    # history of the project.
+    for pattern in dict.fromkeys([match, "v*"]):
+        try:
+            return git("describe", "--tags", "--abbrev=0", "--match", pattern, f"{tag}^")
+        except subprocess.CalledProcessError:
+            continue
+    return None
 
 
 def main() -> None:
