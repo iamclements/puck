@@ -65,7 +65,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.Backspace
+import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PowerSettingsNew
@@ -1603,7 +1603,7 @@ private fun TextEntry(device: AppleTvDevice, state: UiState, vm: RemoteViewModel
                 containerColor = c.card,
                 contentColor = scheme.onSurfaceVariant,
             ) {
-                Icon(Icons.Default.Backspace, contentDescription = stringResource(R.string.clear_field), modifier = Modifier.size(20.dp))
+                Icon(Icons.AutoMirrored.Filled.Backspace, contentDescription = stringResource(R.string.clear_field), modifier = Modifier.size(20.dp))
             }
         }
 
