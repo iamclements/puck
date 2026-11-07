@@ -48,6 +48,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        LocalNetwork.start(this)
         showPermissionExplainer = neededPermissions().isNotEmpty() &&
             !SettingsStore(this).permissionsExplained()
         setContent {
