@@ -187,6 +187,7 @@ class RemoteViewModel(
         }
         drainTouchInput()
         AppShortcuts.sync(app, store)
+        QuickTiles.sync(app, store)
         if (directKey != null) {
             autoConnectAttempted = true
             connectToKnownKey(directKey)
@@ -365,6 +366,7 @@ class RemoteViewModel(
         if (trimmed.isEmpty() || trimmed == device.name) return
         store.setDisplayName(device.credentialKey, trimmed)
         AppShortcuts.sync(getApplication(), store)
+        QuickTiles.sync(getApplication(), store)
         DeviceWidgetProvider.refreshAll(getApplication())
         refreshManagedDevices()
         _state.update { s ->
@@ -658,6 +660,7 @@ class RemoteViewModel(
         store.forgetAirPlay(device.credentialKey)
         _state.update { it.copy(pairedKeys = it.pairedKeys - device.credentialKey, airplayPaired = false) }
         AppShortcuts.sync(getApplication(), store)
+        QuickTiles.sync(getApplication(), store)
         // Otherwise a widget pinned to this device keeps showing it, and
         // keeps launching straight into it, indefinitely — nothing else
         // about the widget lifecycle would ever notice it was forgotten.
@@ -713,6 +716,7 @@ class RemoteViewModel(
                 store.saveLastDevice(device)
                 store.saveDevice(device)
                 AppShortcuts.sync(getApplication(), store)
+                QuickTiles.sync(getApplication(), store)
                 // A widget bound to this device may be showing a stale name
                 // (or the stale-binding "tap to configure" placeholder, if
                 // it predates this re-pairing) — refresh it now that the

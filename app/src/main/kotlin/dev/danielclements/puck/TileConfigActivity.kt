@@ -12,11 +12,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 
 /**
- * Opened on a long-press of either Quick Settings tile — the only
+ * Opened on a long-press of a Quick Settings tile — the only
  * configuration hook Android gives a tile, since there is no add-time picker
  * like the home-screen widget has. [Intent.EXTRA_COMPONENT_NAME] says which
- * of [DeviceTileOne] / [DeviceTileTwo] was pressed, so one activity serves
- * both slots.
+ * of the [QuickTiles] slots was pressed, so one activity serves them all.
  *
  * Long-press support for third-party tiles is a launcher behaviour, not
  * guaranteed by the platform — where it isn't wired up, the tile keeps
@@ -28,11 +27,7 @@ class TileConfigActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         val component = componentExtra()
-        val slot = when (component?.className) {
-            DeviceTileOne::class.java.name -> 0
-            DeviceTileTwo::class.java.name -> 1
-            else -> null
-        }
+        val slot = QuickTiles.slotOf(component?.className)
         if (slot == null) {
             finish()
             return
