@@ -10,7 +10,7 @@
                 android:src="@drawable/w_ring_dashed" android:visibility="gone" android:importantForAccessibility="no" />
             <ImageView android:id="@+id/w_glyph" android:layout_width="20dp" android:layout_height="20dp"
                 android:layout_gravity="center" android:src="@drawable/ic_widget_remote"
-                android:tint="@color/puck_w_glyph" android:importantForAccessibility="no" />
+                android:tint="@color/puck_w_c_glyph" android:importantForAccessibility="no" />
             <ImageView android:id="@+id/w_add" android:layout_width="18dp" android:layout_height="18dp"
                 android:layout_gravity="center" android:src="@drawable/ic_w_add"
                 android:tint="@color/puck_w_on_surface_variant" android:visibility="gone" android:importantForAccessibility="no" />

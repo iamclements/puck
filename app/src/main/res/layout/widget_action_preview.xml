@@ -5,7 +5,7 @@
     android:paddingTop="8dp" android:paddingStart="6dp" android:paddingEnd="6dp" android:paddingBottom="7dp">
     <FrameLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
         <ImageView android:id="@+id/w_icon" android:layout_width="28dp" android:layout_height="28dp"
-            android:src="@drawable/ic_w_play_pause" android:tint="@color/puck_w_on_hero" android:importantForAccessibility="no" />
+            android:src="@drawable/ic_w_play_pause_hero" android:importantForAccessibility="no" />
         <ImageView android:id="@+id/w_dashed" android:layout_width="32dp" android:layout_height="32dp" android:src="@drawable/w_ring_dashed"
             android:visibility="gone" android:importantForAccessibility="no" />
         <TextView android:id="@+id/w_badge" android:layout_width="16dp" android:layout_height="16dp" android:layout_gravity="top|end"
@@ -16,5 +16,5 @@
     <FrameLayout android:layout_width="match_parent" android:layout_height="6dp" />
     <TextView android:id="@+id/w_name" android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-medium" android:textSize="11sp" android:maxLines="2" android:ellipsize="end"
-                android:includeFontPadding="false" android:gravity="center" android:textColor="@color/puck_w_on_hero"  android:text="@string/widget_preview_name" />
+                android:includeFontPadding="false" android:gravity="center" android:textColor="@color/puck_w_c_action_hero"  android:text="@string/widget_preview_name" />
 </LinearLayout>

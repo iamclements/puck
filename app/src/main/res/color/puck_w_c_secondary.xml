@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A colour chosen by whether the view is enabled, resolved when the widget is inflated, so it follows light/dark and the wallpaper. Code flips it with RemoteViews.alt() (setEnabled, one of the few methods RemoteViews allows) instead of passing a colour number, which would be baked in at render time and go stale. Second line: muted, or error (cannot reach / no longer paired). -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false" android:color="@color/puck_w_error" />
+    <item android:color="@color/puck_w_on_surface_variant" />
+</selector>

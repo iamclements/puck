@@ -9,9 +9,8 @@ import dev.atvremote.protocol.discovery.AppleTvDevice
 import dev.danielclements.puck.WidgetLayout.Room
 import dev.danielclements.puck.WidgetRender.applyStatus
 import dev.danielclements.puck.WidgetRender.background
-import dev.danielclements.puck.WidgetRender.color
+import dev.danielclements.puck.WidgetRender.alt
 import dev.danielclements.puck.WidgetRender.show
-import dev.danielclements.puck.WidgetRender.tint
 
 /**
  * The Room widget: one paired Apple TV, from a bare mark up to a panel with
@@ -92,8 +91,6 @@ class DeviceWidgetProvider : AppWidgetProvider() {
 
         private fun render(context: Context, id: Int, spec: WidgetLayout.RoomSpec, state: State): RemoteViews {
             val rv = RemoteViews(context.packageName, layoutFor(spec))
-            val onSurface = color(context, R.color.puck_w_on_surface)
-            val muted = color(context, R.color.puck_w_on_surface_variant)
             val isTile = spec.layout == Room.TILE
             val isMicro = spec.layout == Room.MICRO
             val hasButtons = spec.layout == Room.PANEL || spec.layout == Room.PANEL_WIDE ||
@@ -141,7 +138,10 @@ class DeviceWidgetProvider : AppWidgetProvider() {
                     rv.show(R.id.w_dashed, isMicro || isTile)
                     rv.show(R.id.w_add, true)
                     rv.setTextViewText(R.id.w_name, context.getString(if (isTile) R.string.widget_choose_tv else R.string.widget_choose_a_tv))
-                    rv.setTextColor(R.id.w_name, onSurface)
+                    // The tile's name is in the glyph colour; this state wants on-surface.
+                    rv.setTextViewText(R.id.w_name_alt, context.getString(R.string.widget_choose_tv))
+                    rv.show(R.id.w_name, !isTile)
+                    rv.show(R.id.w_name_alt, isTile)
                     if (!isTile && !isMicro) rv.background(R.id.w_tile, R.drawable.w_square_dashed_56)
                     rv.applyStatus(context, id, context.getString(R.string.widget_tap_to_set_up))
                     rv.show(R.id.w_grid, false)
@@ -154,14 +154,14 @@ class DeviceWidgetProvider : AppWidgetProvider() {
                     rv.background(WidgetRender.ROOT, R.drawable.w_bg_card)
                     rv.setContentDescription(WidgetRender.ROOT, context.getString(R.string.widget_no_longer_paired))
                     rv.setImageViewResource(R.id.w_ring, R.drawable.w_ring_muted)
-                    rv.tint(R.id.w_glyph, muted)
+                    rv.alt(R.id.w_glyph)
                     rv.show(R.id.w_badge, true)
                     rv.setTextViewText(R.id.w_name, WidgetBindings.lastName(context, id) ?: context.getString(R.string.widget_room_label))
-                    rv.setTextColor(R.id.w_name, muted)
+                    rv.alt(R.id.w_name)
                     if (!isTile && !isMicro) rv.background(R.id.w_tile, R.drawable.w_mark_outline_56)
                     rv.show(R.id.w_progress, false); rv.show(R.id.w_status_icon, false)
                     rv.setTextViewText(R.id.w_secondary, context.getString(R.string.widget_no_longer_paired))
-                    rv.setTextColor(R.id.w_secondary, color(context, R.color.puck_w_error))
+                    rv.alt(R.id.w_secondary)
                     rv.show(R.id.w_grid, false)
                 }
             }
@@ -190,15 +190,14 @@ class DeviceWidgetProvider : AppWidgetProvider() {
             rv.setImageViewResource(R.id.w_ring, R.drawable.w_ring)
             rv.show(R.id.w_dashed, false)
             rv.show(R.id.w_glyph, true)
-            rv.tint(R.id.w_glyph, color(context, R.color.puck_w_glyph))
+            rv.alt(R.id.w_glyph, false)
             rv.show(R.id.w_add, false)
             rv.show(R.id.w_badge, false)
             val smallTile = spec.short || layout == Room.PANEL || layout == Room.PANEL_WIDE
             rv.background(R.id.w_tile, if (smallTile) R.drawable.w_mark_44 else R.drawable.w_mark_56)
-            rv.setTextColor(
-                R.id.w_name,
-                color(context, if (layout == Room.TILE) R.color.puck_w_glyph else R.color.puck_w_on_surface),
-            )
+            rv.alt(R.id.w_name, false)
+            rv.show(R.id.w_name, true)
+            rv.show(R.id.w_name_alt, false)
             rv.show(R.id.w_grid, true)
         }
 
