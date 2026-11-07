@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The whole widget icon as ONE square vector: rounded tile, faint ring, remote
+  glyph. Drawn in an ImageView with scaleType="fitCenter", so it stays a true
+  square and keeps its proportions in whatever cell a launcher hands the
+  widget. Earlier, a stretching background shape made the tile a squashed
+  rectangle on launchers whose cells are not square (Samsung One UI, some
+  Xiaomi and OnePlus grids). DESIGN_SPEC.md section 9.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp" android:height="96dp"
+    android:viewportWidth="96" android:viewportHeight="96">
+    <path
+        android:fillColor="@color/puck_widget_tile"
+        android:pathData="M27,0H69A27,27 0 0,1 96,27V69A27,27 0 0,1 69,96H27A27,27 0 0,1 0,69V27A27,27 0 0,1 27,0Z" />
+    <path
+        android:strokeColor="@color/puck_widget_glyph"
+        android:strokeAlpha="0.4"
+        android:strokeWidth="2"
+        android:pathData="M48,12a36,36 0 1,0 0.001,0z" />
+    <group
+        android:translateX="27" android:translateY="27"
+        android:scaleX="1.75" android:scaleY="1.75">
+        <path
+            android:fillType="evenOdd"
+            android:fillColor="@color/puck_widget_glyph"
+            android:pathData="M12,2.5a4,4 0 0,1 4,4v11a4,4 0 0,1 -4,4a4,4 0 0,1 -4,-4v-11a4,4 0 0,1 4,-4z
+                M12,5.5a2,2 0 1,0 0,4a2,2 0 1,0 0,-4z
+                M12,12.5a1,1 0 1,0 0,2a1,1 0 1,0 0,-2z
+                M12,16a1,1 0 1,0 0,2a1,1 0 1,0 0,-2z" />
+    </group>
+</vector>

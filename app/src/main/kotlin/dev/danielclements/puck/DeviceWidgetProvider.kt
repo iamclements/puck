@@ -6,10 +6,12 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.util.SizeF
 import android.widget.RemoteViews
 
 /**
- * A 1x1 home-screen widget pinned to one specific, already-paired Apple TV.
+ * A home-screen widget (1x1, resizable) pinned to one specific, already-paired Apple TV.
  *
  * Unlike the long-press launcher shortcuts (which always track the two most
  * recently used devices), each widget instance is bound once, at add time,
@@ -28,6 +30,12 @@ class DeviceWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
+        /** Width from which the wide card layout is used. */
+        private const val WIDE_DP = 110f
+
+        /** Height (with a wide width) at which a 2x2 goes back to the big icon. */
+        private const val SQUARE_DP = 110f
+
         /**
          * Re-renders every placed widget instance.
          *
@@ -56,11 +64,7 @@ class DeviceWidgetProvider : AppWidgetProvider() {
             val credentialKey = WidgetBindings.credentialKey(context, appWidgetId)
             val device = credentialKey?.let { store.loadDevice(it) }
 
-            val views = RemoteViews(context.packageName, R.layout.widget_device)
-            views.setTextViewText(
-                R.id.widget_label,
-                device?.name ?: context.getString(R.string.widget_unconfigured),
-            )
+            val label = device?.name ?: context.getString(R.string.widget_unconfigured)
 
             // A binding that no longer resolves to a device — forgotten
             // since this widget was configured — sends the tap back to the
@@ -88,8 +92,27 @@ class DeviceWidgetProvider : AppWidgetProvider() {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 )
             }
-            views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
 
+            fun build(layout: Int) = RemoteViews(context.packageName, layout).apply {
+                setTextViewText(R.id.widget_label, label)
+                setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+            }
+
+            // From Android 12 the widget can be resized and the launcher picks
+            // the layout that fits: a square icon-and-pill when small or tall,
+            // an icon-beside-text card when stretched wider. Earlier versions
+            // get the compact layout, which scales to any cell.
+            val views = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                RemoteViews(
+                    mapOf(
+                        SizeF(0f, 0f) to build(R.layout.widget_device),
+                        SizeF(WIDE_DP, 0f) to build(R.layout.widget_device_wide),
+                        SizeF(WIDE_DP, SQUARE_DP) to build(R.layout.widget_device),
+                    )
+                )
+            } else {
+                build(R.layout.widget_device)
+            }
             manager.updateAppWidget(appWidgetId, views)
         }
     }

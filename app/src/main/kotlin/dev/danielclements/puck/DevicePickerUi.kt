@@ -2,6 +2,11 @@ package dev.danielclements.puck
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -27,7 +32,12 @@ fun DevicePicker(
     emptyRes: Int,
     onPick: (AppleTvDevice) -> Unit,
 ) {
-    Column(Modifier.fillMaxSize().padding(24.dp)) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout))
+            .padding(24.dp),
+    ) {
         Text(
             stringResource(titleRes),
             style = MaterialTheme.typography.headlineSmall,

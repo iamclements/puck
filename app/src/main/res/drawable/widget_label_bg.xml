@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  A soft pill behind the label so it stays readable on any wallpaper. A bare
+  label is dark-on-dark or light-on-light on some home screens, because
+  launchers differ on whether they draw icon labels with a shadow.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="12dp" />
+    <solid android:color="@color/widget_label_bg" />
+</shape>

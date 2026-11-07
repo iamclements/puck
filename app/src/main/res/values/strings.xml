@@ -22,6 +22,9 @@
 
     <!-- Home-screen widget -->
     <string name="widget_unconfigured">Add a TV</string>
+    <string name="widget_preview_label">Living Room</string>
+    <string name="widget_wide_hint">Open remote</string>
+    <string name="widget_description">Jump straight to one Apple TV\'s remote. Stretch it wider for a bigger version.</string>
     <string name="widget_pick_device_title">Choose a TV for this widget</string>
     <string name="widget_pick_device_empty">Pair with an Apple TV in the app first, then add this widget.</string>
 

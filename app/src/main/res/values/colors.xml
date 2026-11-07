@@ -5,5 +5,7 @@
          The icon tile itself follows colors_widget.xml / values-v31's dynamic
          variant instead, same as the in-app theme — see widget_tile_bg.xml. -->
     <color name="widget_on_background">#FF1A1A1C</color>
+    <!-- Label pill / wide card behind widget text. -->
+    <color name="widget_label_bg">#E6FFFFFF</color>
     <color name="window_background">#FFF9F9FF</color>
 </resources>

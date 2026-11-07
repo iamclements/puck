@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Picker preview of the compact layout, with a sample name (the real one has
+  none until it is bound). Compact (1x1) layout: the icon, then the TV's name in a pill. The icon is a
+  single square vector fitted into the space left over, so it is never
+  stretched, whatever the launcher's cell shape. See widget_device_wide.xml for
+  the layout used when the widget is resized wider.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_preview_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="4dp">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scaleType="fitCenter"
+        android:src="@drawable/widget_tile"
+        android:importantForAccessibility="no" />
+
+    <TextView
+        android:id="@+id/widget_preview_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/widget_label_bg"
+        android:paddingStart="6dp"
+        android:paddingEnd="6dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:gravity="center"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:textSize="11sp"
+        android:textColor="@color/widget_on_background"
+        android:text="@string/widget_preview_label" />
+
+</LinearLayout>

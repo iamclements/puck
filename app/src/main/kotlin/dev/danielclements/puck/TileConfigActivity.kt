@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.service.quicksettings.TileService
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
@@ -26,6 +27,9 @@ class TileConfigActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Without this the status bar keeps the light icons of the dark window
+        // theme, which vanish against this screen's light background.
+        enableEdgeToEdge()
 
         val component = componentExtra()
         val slot = when (component?.className) {
