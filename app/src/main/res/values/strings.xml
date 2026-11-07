@@ -87,7 +87,7 @@
     <string name="connecting">Connecting…</string>
     <string name="scanning">Scanning…</string>
     <string name="no_devices">No Apple TVs found</string>
-    <string name="no_devices_hint">Make sure your phone is on the same Wi-Fi network as the Apple TV.</string>
+    <string name="no_devices_hint">Make sure your phone is on the same Wi-Fi network as the Apple TV, and that any VPN allows local network access.</string>
     <string name="dismiss">Dismiss</string>
     <string name="wake_and_retry">Wake %1$s and retry</string>
 
@@ -172,7 +172,7 @@
     <string name="loading_apps">Loading apps…</string>
 
     <!-- Errors -->
-    <string name="err_lost_connection">Lost connection to the Apple TV. Check it is awake and on the same network.</string>
+    <string name="err_lost_connection">Lost connection to the Apple TV. Check it is awake and on the same network. If you use a VPN, allow local network access.</string>
     <string name="err_generic">Something went wrong</string>
     <string name="err_pairing_start">Could not start pairing: %1$s</string>
     <string name="err_pairing_failed">Pairing failed</string>

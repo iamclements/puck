@@ -14,7 +14,6 @@ import org.json.JSONObject
 import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
-import java.net.URL
 import java.net.URLEncoder
 import java.util.Locale
 
@@ -211,7 +210,7 @@ object AppIcons {
      * every app in a rate-limited drawer wearing initials permanently.
      */
     private fun download(url: String): ByteArray? {
-        val connection = URL(url).openConnection() as HttpURLConnection
+        val connection = LocalNetwork.internetConnection(url)
         try {
             connection.connectTimeout = 5_000
             connection.readTimeout = 5_000
