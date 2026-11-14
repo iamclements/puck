@@ -144,7 +144,7 @@ dependencies {
     implementation(project(":protocol"))
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
-    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.core:core-ktx:1.19.1")
     implementation("androidx.activity:activity-compose:1.9.3")
     // Foldable posture (FoldingFeature / WindowLayoutInfo) for the remote
     // screen's Tabletop/Book layouts — DESIGN_SPEC.md §8.
@@ -159,7 +159,7 @@ dependencies {
     // same compileSdk 37 requirement, so this stays pinned to the last BOM
     // that targets compileSdk 35 — which already has dynamic (Material You)
     // color; that API has been stable since Material 3 1.0.
-    val composeBom = platform("androidx.compose:compose-bom:2024.12.01")
+    val composeBom = platform("androidx.compose:compose-bom:2026.09.00")
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
